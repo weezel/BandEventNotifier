@@ -14,6 +14,7 @@ automate this task.
 - Requests
 - Sqlite3
 - Lxml
+- Pylast
 
 # LICENSE
 Software is BSD Licensed, please see `LICENSE` for more info.
