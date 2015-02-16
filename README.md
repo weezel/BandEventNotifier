@@ -32,9 +32,9 @@ Software is BSD Licensed, please see `LICENSE` for more info.
 ### Implementing a new venue parser
 When implementing a new venue parser, here's a quick start:
 
-- # Implement methods shown in `absvenueparser.py` abstract class.
+- Implement methods shown in `absvenueparser.py` abstract class.
 
-- # File name prefix should be `plugin_`, i.e. `plugin_klubi.py`.
+- File name prefix should be `plugin_`, i.e. `plugin_klubi.py`.
 
 ### Please follow the following coding conventions:
 - Indent is four spaces.
