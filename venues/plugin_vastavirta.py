@@ -1,22 +1,19 @@
 # -*- coding: utf-8 -*-
 
 from lxml import html
-from absvenueparser import AbsVenueParser
 
-import requests
 import re
 
 
-class Vastavirta(AbsVenueParser):
+class Vastavirta(object):
     def __init__(self):
-        super(AbsVenueParser, self).__init__()
         self.data = None
 
         self.url = "http://vastavirta.net/tulevat.html"
-        self.venuename = "Vastavirta"
+        self.name = "Vastavirta"
 
-    def getVenue(self):
-        return self.venuename
+    def getVenueName(self):
+        return self.name
 
     def parseArtists(self, data):
         pass
@@ -48,6 +45,8 @@ class Vastavirta(AbsVenueParser):
 
 
 if __name__ == '__main__':
+    import requests
+
     p = Vastavirta()
     p.parseEvents("")
 

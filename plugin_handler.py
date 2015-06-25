@@ -5,7 +5,6 @@
 
 import os
 import pkgutil
-import re
 import sys
 
 
@@ -14,8 +13,9 @@ def load_venue_plugins():
     Read plugin directory and load found plugins.
     Variable "blacklisted" can be used to exclude loading certain plugins.
     """
-    blacklisted = ["absvenueparser", "plugin_klubi", "plugin_tiketti"]
+    blacklisted = ["plugin_klubi", "plugin_tiketti"]
     foundblacklisted = list()
+    loadedplugins = list()
     pluginspathabs = os.path.join(os.path.dirname(__file__), "venues")
 
     for loader, plugname, ispkg in \
@@ -23,19 +23,20 @@ def load_venue_plugins():
         if plugname in sys.modules:
             continue
         if plugname in blacklisted:
-            foundblacklisted.append(plugname)
+            foundblacklisted.append(plugname.lstrip("plugin_"))
             continue
 
-        plugpath = "%s.%s" % (pluginspathabs, plugname)
+        plugpath = "venues.%s" % (plugname)
         loadplug = __import__(plugpath, fromlist = [plugname])
 
         classname = plugname.split("_")[1].title()
         loadedclass = getattr(loadplug, classname)
 
         instance = loadedclass()
-        print "Loaded plugin: %s" % instance.getVenue()
-    print "Found but blacklisted plugins: %s." % \
-           (", ".join(foundblacklisted[1:]))
+        loadedplugins.append(instance)
+        print "Loaded plugin: %s" % instance.getVenueName()
+    print "Blacklisted plugins: %s.\n" % (", ".join(foundblacklisted[1:]))
+    return  loadedplugins
 
-load_venue_plugins()
-
+if __name__ == '__main__':
+    load_venue_plugins()

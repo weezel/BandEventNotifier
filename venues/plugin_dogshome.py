@@ -1,22 +1,19 @@
 # -*- coding: utf-8 -*-
 
 from lxml.html import parse
-from absvenueparser import AbsVenueParser
 
-import requests
 import re
 
 
-class Dogshome(AbsVenueParser):
+class Dogshome(object):
     def __init__(self):
-        super(AbsVenueParser, self).__init__()
         self.data = None
 
         self.url = "http://www.dogshome.fi/index.php?id=4"
-        self.venue = "Dog's home"
+        self.name = "Dog's home"
 
-    def getVenue(self):
-        return self.venue
+    def getVenueName(self):
+        return self.name
 
     def parseArtists(self, data):
         pass
@@ -31,8 +28,13 @@ class Dogshome(AbsVenueParser):
                 except:
                     print lineparsed
 
+    def getJSON(self):
+        return ""
+
 
 if __name__ == '__main__':
+    import requests
+
     p = Dogshome()
     p.parseEvents("")
 
