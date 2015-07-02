@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Implementation leans Lex Toumbourou's example:
+# Implementation leans to Lex Toumbourou's example:
 # https://lextoumbourou.com/blog/posts/dynamically-loading-modules-and-classes-in-python/
 
 import os
@@ -13,7 +13,7 @@ def load_venue_plugins():
     Read plugin directory and load found plugins.
     Variable "blacklisted" can be used to exclude loading certain plugins.
     """
-    blacklisted = ["plugin_klubi", "plugin_tiketti"]
+    blacklisted = ["plugin_klubi", "plugin_tiketti", "plugin_vastavirta"]
     foundblacklisted = list()
     loadedplugins = list()
     pluginspathabs = os.path.join(os.path.dirname(__file__), "venues")
