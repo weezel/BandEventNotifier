@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import glob
-import imp
 import re
 import requests
 import sys
@@ -28,9 +26,8 @@ class Fetcher(threading.Thread):
             venue_data = start_fetching(venue)
             print "[-] Fetching and parsing '%s'" % (venue.name)
             self.fetchqueue.task_done()
-            # TODO Implement callback to completed venues
+            # TODO Implement callback to inform completed venues
             #print "[+] Fetching '%s' completed" % (venue.name)
-
 
 def start_fetching(venue):
     retries = 3
@@ -44,7 +41,6 @@ def start_fetching(venue):
         venue.parseArtists(r.text)
     except Exception, e:
         raise e
-
 
 def main():
     fetchqueue = Queue()

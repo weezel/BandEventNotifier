@@ -11,6 +11,7 @@ class DBEngine(object):
         self.conn = None
         self.cur = None
         self.__firstrun()
+        self.venues = dict()
 
     def __firstrun(self):
         self.conn = sqlite3.connect(dbname)
@@ -22,23 +23,47 @@ class DBEngine(object):
         if self.conn:
             self.conn.close()
 
-    def plugin_create_venue_entity(self, venueaggr):
+    def plugin_create_venue_entity(self, venuedict):
         """
         Create needed venue entries.
 
-        Parameter venueaggr is Dogshome.eventSQLentity(), i.e.
+        Parameter venuedict is Dogshome.eventSQLentity(), i.e.
         """
-        cols = ", ".join(venueaggr.keys())
-        placeholders = ":" + ", :".join(venueaggr.keys())
+        cols = ", ".join(venuedict.keys())
+        placeholders = ":" + ", :".join(venuedict.keys())
         q = u"INSERT OR IGNORE INTO venue (%s) VALUES (%s);" \
                 % (cols, placeholders)
-        self.cur.execute(q, venueaggr)
+        self.cur.execute(q, venuedict)
         self.conn.commit()
 
-    def getVenues(self):
-        q = u"SELECT vid, name, city, country FROM venue"
+        # Query events now, will be {venue name : venueid}
+        self.venues.update({venuedict["name"] : self.cur.lastrowid})
+
+    def insert_venue_events(self, venueaggr):
+        """
+        Insert parsed events from a venue to database.
+        """
+        for event in venueaggr:
+            # Replace venue by venueid
+            event["venueid"] = self.venues[event["venue"]] # This is venueid
+            event.pop("venue")
+            cols = ", ".join(event.keys())
+            placeholders = ":" + ", :".join(event.keys())
+            q = u"INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
+                    % (cols, placeholders)
+            self.cur.execute(q, event)
+            self.conn.commit()
+
+    def get_venues(self):
+        q = u"SELECT id, name, city, country FROM venue"
         results = self.cur.execute(q)
         return results.fetchall()
+
+    def get_venue_by_name(self, vname):
+        q = u"SELECT id, name, city, country FROM venue " \
+           + "WHERE name = ? LIMIT 1;"
+        results = self.cur.execute(q, [vname])
+        return results.fetchone()
 
 if __name__ == '__main__':
     import venues.plugin_dogshome
@@ -47,7 +72,11 @@ if __name__ == '__main__':
     doggari = venues.plugin_dogshome.Dogshome()
 
     db.plugin_create_venue_entity(doggari.eventSQLentity())
-    print db.getVenues()
+    print db.get_venues()
+    print db.get_venue_by_name("Dog's home")
+    print db.get_venue_by_name("Testijuottola that should fail")
+    print
+    db.insert_venue_events(doggari.parse_events(""))
 
     db.close()
 

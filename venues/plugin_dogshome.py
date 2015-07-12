@@ -17,30 +17,30 @@ class Dogshome(object):
         self.datestartpat = re.compile("^\d+\.\d+. ")
         self.monetarypattern = re.compile("[0-9.,]+ e")
 
-    def getVenueName(self):
+    def get_venue_name(self):
         return self.name
 
-    def getCity(self):
+    def get_city(self):
         return self.city
 
-    def getCountry(self):
+    def get_country(self):
         return self.country
 
     def eventSQLentity(self):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return {u"name" : self.name, \
-                u"city" : self.city, \
-                u"country" : self.country}
+        return { u"name" : self.name, \
+                 u"city" : self.city, \
+                 u"country" : self.country }
 
-    def parsePrice(self, line):
+    def parse_price(self, line):
         linetmp = line.replace(u"€", u" e")
         prices = re.findall(self.monetarypattern, linetmp)
 
         return map(lambda p: p.replace(" ", "").strip(","), prices)
 
-    def parseDate(self, line):
+    def parse_date(self, line):
         # TODO Doesn't handle year changes yet.
         date = re.search(self.datestartpat, line)
         if date is not None:
@@ -51,15 +51,15 @@ class Dogshome(object):
             date = ""
         return unicode(date)
 
-    def parseEvent(self, line):
+    def parse_event(self, line):
         dateends = line.find(" ") + 1
 
         if dateends > 0:
             return unicode(line[dateends :])
         return unicode("")
 
-    def parseEvents(self, data):
-        doc = parse("doggari.html").getroot()
+    def parse_events(self, data):
+        doc = parse("venues/doggari.html").getroot()
         eventtags = doc.cssselect('div.innertube p')
         container = list()
 
@@ -93,20 +93,21 @@ class Dogshome(object):
            #     u"event" : self.parseEvent(eventinfo),    \
            #     u"price" : self.parsePrice(eventinfo) }
 
+        # XXX As you can spot, key values equals to database column names,
+        # in some level. There are few exceptions, for example a key 'venue'
+        # is a foreign key and therefore not equal to venueid.
+        # Fetching the venueid is done by the dbengine.py.
         for event in container:
-            yield { u"venue" : self.getVenueName(),    \
-                    u"city" : self.getCity(),          \
-                    u"country" : self.getCountry(),    \
-                    u"date" : self.parseDate(event),   \
-                    u"event" : self.parseEvent(event), \
-                    u"price" : self.parsePrice(event) }
+            yield { u"venue" : self.get_venue_name(),    \
+                    u"date" : self.parse_date(event),   \
+                    u"name" : self.parse_event(event),  \
+                    u"price" : "/".join(self.parse_price(event)) }
 
 if __name__ == '__main__':
     p = Dogshome()
 
     #print p.parseEvents("")
-    import json
-    daa = p.parseEvents("")
+    daa = p.parse_events("")
     for i in daa:
         print "Keys = %s" % i.keys()
         print "Data = %s" % i
