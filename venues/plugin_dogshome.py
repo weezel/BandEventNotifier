@@ -17,13 +17,13 @@ class Dogshome(object):
         self.datestartpat = re.compile("^\d+\.\d+. ")
         self.monetarypattern = re.compile("[0-9.,]+ e")
 
-    def get_venue_name(self):
+    def getVenueName(self):
         return self.name
 
-    def get_city(self):
+    def getCity(self):
         return self.city
 
-    def get_country(self):
+    def getCountry(self):
         return self.country
 
     def eventSQLentity(self):
@@ -34,13 +34,13 @@ class Dogshome(object):
                  u"city" : self.city, \
                  u"country" : self.country }
 
-    def parse_price(self, line):
+    def parsePrice(self, line):
         linetmp = line.replace(u"€", u" e")
         prices = re.findall(self.monetarypattern, linetmp)
 
         return map(lambda p: p.replace(" ", "").strip(","), prices)
 
-    def parse_date(self, line):
+    def parseDate(self, line):
         # TODO Doesn't handle year changes yet.
         date = re.search(self.datestartpat, line)
         if date is not None:
@@ -51,14 +51,14 @@ class Dogshome(object):
             date = ""
         return unicode(date)
 
-    def parse_event(self, line):
+    def parseEvent(self, line):
         dateends = line.find(" ") + 1
 
         if dateends > 0:
             return unicode(line[dateends :])
         return unicode("")
 
-    def parse_events(self, data):
+    def parseEvents(self, data):
         doc = parse("venues/doggari.html").getroot()
         eventtags = doc.cssselect('div.innertube p')
         container = list()
@@ -98,16 +98,16 @@ class Dogshome(object):
         # is a foreign key and therefore not equal to venueid.
         # Fetching the venueid is done by the dbengine.py.
         for event in container:
-            yield { u"venue" : self.get_venue_name(),    \
-                    u"date" : self.parse_date(event),   \
-                    u"name" : self.parse_event(event),  \
-                    u"price" : "/".join(self.parse_price(event)) }
+            yield { u"venue" : self.getVenueName(),    \
+                    u"date" : self.parseDate(event),   \
+                    u"name" : self.parseEvent(event),  \
+                    u"price" : "/".join(self.parsePrice(event)) }
 
 if __name__ == '__main__':
     p = Dogshome()
 
     #print p.parseEvents("")
-    daa = p.parse_events("")
+    daa = p.parseEvents("")
     for i in daa:
         print "Keys = %s" % i.keys()
         print "Data = %s" % i

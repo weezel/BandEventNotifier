@@ -10,10 +10,10 @@ class DBEngine(object):
     def __init__(self):
         self.conn = None
         self.cur = None
-        self.__firstrun()
+        self.__firstRun()
         self.venues = dict()
 
-    def __firstrun(self):
+    def __firstRun(self):
         self.conn = sqlite3.connect(dbname)
         self.cur = self.conn.cursor()
 
@@ -23,7 +23,7 @@ class DBEngine(object):
         if self.conn:
             self.conn.close()
 
-    def plugin_create_venue_entity(self, venuedict):
+    def pluginCreateVenueEntity(self, venuedict):
         """
         Create needed venue entries.
 
@@ -71,12 +71,11 @@ if __name__ == '__main__':
     db = DBEngine()
     doggari = venues.plugin_dogshome.Dogshome()
 
-    db.plugin_create_venue_entity(doggari.eventSQLentity())
-    print db.get_venues()
-    print db.get_venue_by_name("Dog's home")
-    print db.get_venue_by_name("Testijuottola that should fail")
-    print
-    db.insert_venue_events(doggari.parse_events(""))
+    db.pluginCreateVenueEntity(doggari.eventSQLentity())
+    assert(db.get_venues() == [(1, u"Dog's home", u'Tampere', u'Finland')])
+    assert(db.get_venue_by_name("Dog's home") == (1, u"Dog's home", u'Tampere', u'Finland'))
+    assert(db.get_venue_by_name("Testijuottola that should fail") == None)
+    #db.insert_venue_events(doggari.parseEvents(""))
 
     db.close()
 
