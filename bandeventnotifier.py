@@ -1,26 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re
 import requests
-import sys
 import threading
 from Queue import Queue
 
 from plugin_handler import load_venue_plugins
+from dbengine import dbengine
+from lastfmfetch import lastfmfetch
 
 MAX_THREADS = 6
 
 
 # XXX Rough implementation of parallel venue fetcher
 class Fetcher(threading.Thread):
-    def __init__(self, q):
+    def __init__(self, q, db=None):
         threading.Thread.__init__(self)
-
         self.fetchqueue = q
+        self.db = self.__dbInit(db)
+
+    def __dbInit(self, db):
+        if self.db == None:
+            self.db = db
 
     def run(self):
-        """docstring for run"""
         while True:
             venue = self.fetchqueue.get()
             venue_data = start_fetching(venue)
@@ -45,9 +48,9 @@ def start_fetching(venue):
 def main():
     fetchqueue = Queue()
     venues = load_venue_plugins()
-    
+
     for v in range(MAX_THREADS):
-        t = Fetcher(fetchqueue)
+        t = Fetcher(fetchqueue, dbengine.DBEngine())
         t.setDaemon(True)
         t.start()
     for venue in venues:

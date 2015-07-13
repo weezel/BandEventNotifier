@@ -39,7 +39,7 @@ class DBEngine(object):
         # Query events now, will be {venue name : venueid}
         self.venues.update({venuedict["name"] : self.cur.lastrowid})
 
-    def insert_venue_events(self, venueaggr):
+    def insertVenueEvents(self, venueaggr):
         """
         Insert parsed events from a venue to database.
         """
@@ -52,14 +52,22 @@ class DBEngine(object):
             q = u"INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
                     % (cols, placeholders)
             self.cur.execute(q, event)
-            self.conn.commit()
+        self.conn.commit() #XXX All processed, commit
 
-    def get_venues(self):
+    def insertLastFMartists(self, artistdata):
+        cols = ", ".join(artistdata.keys())
+        placeholders = ":" + ", :".join(artistdata.keys())
+        q = u"INSERT OR IGNORE INTO artist (%s) VALUES (%s);" \
+                % (cols, placeholders)
+        self.cur.execute(q, artistdata)
+        self.conn.commit()
+
+    def getVenues(self):
         q = u"SELECT id, name, city, country FROM venue"
         results = self.cur.execute(q)
         return results.fetchall()
 
-    def get_venue_by_name(self, vname):
+    def getVenueByName(self, vname):
         q = u"SELECT id, name, city, country FROM venue " \
            + "WHERE name = ? LIMIT 1;"
         results = self.cur.execute(q, [vname])
@@ -72,10 +80,17 @@ if __name__ == '__main__':
     doggari = venues.plugin_dogshome.Dogshome()
 
     db.pluginCreateVenueEntity(doggari.eventSQLentity())
-    assert(db.get_venues() == [(1, u"Dog's home", u'Tampere', u'Finland')])
-    assert(db.get_venue_by_name("Dog's home") == (1, u"Dog's home", u'Tampere', u'Finland'))
-    assert(db.get_venue_by_name("Testijuottola that should fail") == None)
+    assert(db.getVenues() == [(1, u"Dog's home", u'Tampere', u'Finland')])
+    assert(db.getVenueByName("Dog's home") == (1, u"Dog's home", u'Tampere', u'Finland'))
+    assert(db.getVenueByName("Testijuottola that should fail") == None)
     #db.insert_venue_events(doggari.parseEvents(""))
+
+    ### Test LastFM retriever
+    import lastfmfetch
+
+    lfmr = lastfmfetch.LastFmRetriever(db)
+    for artist in lfmr.getAllListenedBands("weezel_ding"):
+        db.insertLastFMartists(artist)
 
     db.close()
 
