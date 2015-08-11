@@ -12,19 +12,26 @@ class LfmAPIkeyError(Exception): pass
 class LastFmRetriever(object):
     def __init__(self, db=None):
         self.__db = self.__dbInit(db)
+        self.__username = None
+        self.__password = None
         self.__apikey = None
         self.__apisecret = None
 
-        self.__apikey, self.__apisecret = self.__readAPIkey(FNAME)
+        self.__username,         \
+             self.__password,    \
+             self.__apikey,      \
+             self.__apisecret = self.__readAPIkeyUserInfo(FNAME)
 
     def __dbInit(self, db):
         if db == None:
             self.db = db
 
-    def __readAPIkey(self, fname):
+    def __readAPIkeyUserInfo(self, fname):
         """
-        First line must include API key.
-        Second line must include API secret.
+        First line must include username.
+        Second line must include password.
+        Third line must include API key.
+        Fourth line must include API secret.
         """
         data = list()
 
@@ -32,13 +39,13 @@ class LastFmRetriever(object):
             for line in f:
                 data.append(line.replace("\n", ""))
 
-        if len(data) < 2:
+        if len(data) < 4:
             raise LfmAPIkeyError("Error while reading API key and secret.")
-        return (data[0], data[1])
+        return (data[0], pylast.md5(data[1]), data[2], data[3])
 
-    def getAllListenedBands(self, username, limit=None):
+    def getAllListenedBands(self, limit=None):
         """
-        Retrieves the all listened bands of a username.
+        Retrieves the all listened bands by self.__username.
 
         Implemented in aggregate method nature so that it can be feed to SQL
         directly.
@@ -46,16 +53,17 @@ class LastFmRetriever(object):
         Changing limit to 'None' will fetch all the listened artists in
         library.
         """
-        network = pylast.get_lastfm_network(self.__apikey, self.__apisecret)
-        if username == None or len(username) < 1:
-            raise LfmUserError("Error while fetching " \
-                  + "username '%s' related data" % username)
+        # XXX This can be probably fed as a dict.
+        network = pylast.get_lastfm_network(api_key = self.__apikey,       \
+                                            api_secret = self.__apisecret, \
+                                            username = self.__username,    \
+                                            password_hash = self.__password)
 
-        library = pylast.Library(username, network)
+        library = pylast.Library(self.__username, network)
 
         for artist in library.get_artists(limit):
             yield {u"name" : artist.item.name, \
-                   u"playcount" : artist.item.get_playcount()}
+                   u"playcount" : artist.playcount}
 
     def calculatePopularity(self, allbands, thisband):
         totalplaycount = sum([artist.playcount for artist in allbands])
@@ -65,6 +73,6 @@ if __name__ == '__main__':
     allbands = list()
     lfmr = LastFmRetriever()
 
-    for i in lfmr.getAllListenedBands("weezel_ding"):
-        print i,
+    for i in lfmr.getAllListenedBands(2):
+        print "%s"  % (i)
 
