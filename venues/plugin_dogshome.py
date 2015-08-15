@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from lxml.html import parse
+from lxml import html
 
 import time
 import re
@@ -59,7 +59,8 @@ class Dogshome(object):
         return unicode("")
 
     def parseEvents(self, data):
-        doc = parse("venues/doggari.html").getroot()
+        #doc = parse("venues/doggari.html").getroot()
+        doc = html.fromstring(data)
         eventtags = doc.cssselect('div.innertube p')
         container = list()
 
@@ -104,10 +105,12 @@ class Dogshome(object):
                     u"price" : "/".join(self.parsePrice(event)) }
 
 if __name__ == '__main__':
-    p = Dogshome()
+    import requests
 
-    #print p.parseEvents("")
-    daa = p.parseEvents("")
+    d = Dogshome()
+    r = requests.get(d.url)
+    daa = d.parseEvents(r.text)
+
     for i in daa:
         print "Keys = %s" % i.keys()
         print "Data = %s" % i
