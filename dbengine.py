@@ -14,8 +14,10 @@ class DBEngine(object):
         self.venues = dict()
 
     def __firstRun(self):
-        self.conn = sqlite3.connect(dbname)
-        self.cur = self.conn.cursor()
+        if self.conn == None:
+            self.conn = sqlite3.connect(dbname)
+        if self.cur == None:
+            self.cur = self.conn.cursor()
 
     def close(self):
         if self.cur:
@@ -73,6 +75,10 @@ class DBEngine(object):
         results = self.cur.execute(q, [vname])
         return results.fetchone()
 
+    def intersectLastFmAndEvents(self):
+        # TODO
+        pass
+
 if __name__ == '__main__':
     import venues.plugin_dogshome
 
@@ -83,13 +89,13 @@ if __name__ == '__main__':
     assert(db.getVenues() == [(1, u"Dog's home", u'Tampere', u'Finland')])
     assert(db.getVenueByName("Dog's home") == (1, u"Dog's home", u'Tampere', u'Finland'))
     assert(db.getVenueByName("Testijuottola that should fail") == None)
-    #db.insert_venue_events(doggari.parseEvents(""))
+    #db.insertVenueEvents(doggari.parseEvents(""))
 
     ### Test LastFM retriever
     import lastfmfetch
 
     lfmr = lastfmfetch.LastFmRetriever(db)
-    for artist in lfmr.getAllListenedBands("weezel_ding"):
+    for artist in lfmr.getAllListenedBands(limit=5):
         db.insertLastFMartists(artist)
 
     db.close()
