@@ -87,10 +87,10 @@ def main():
     elif sys.argv[1] == "fetch":
         print "[-] Fetching LastFM user data."
 
-        #lfmr = lastfmfetch.LastFmRetriever(dbeng)
-        #for artist in lfmr.getAllListenedBands():
-        #    dbeng.insertLastFMartists(artist)
-        #print "[+] LastFM data fetched."
+        lfmr = lastfmfetch.LastFmRetriever(dbeng)
+        for artist in lfmr.getAllListenedBands():
+            dbeng.insertLastFMartists(artist)
+        print "[+] LastFM data fetched."
 
         print "[-] Fetching venues data."
         fetchqueue = Queue()
