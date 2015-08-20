@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import glob
+import os
+import pickle
 import requests
 import sys
 import threading
@@ -28,13 +31,21 @@ class Fetcher(threading.Thread):
     def run(self):
         while True:
             venue = self.fetchqueue.get()
-            self.fetchAndParse(venue)
-            print "[-] Fetching parsing '%s'" % (venue.name)
-            self.fetchqueue.task_done()
-            # TODO Implement callback to inform completed venues
-            #print "[+] Fetching '%s' completed" % (venue.name)
+            print "[-] Fetching and parsing '%s' venue" % (venue.name)
+            venuehtml = self.__fetch(venue)
 
-    def fetchAndParse(self, venue):
+            venueparsed = list()
+            for i in venue.parseEvents(venuehtml):
+                venueparsed.append(i)
+
+            # XXX Pickle hack to dodge SQLite concurrency problems.
+            venue.parseddata = venueparsed
+            fname = os.path.join("venues", venue.fname)
+            pickle.dump(venue, open(fname, "wb"))
+
+            self.fetchqueue.task_done()
+
+    def __fetch(self, venue):
         retries = 3
         r = requests.get(venue.url)
 
@@ -46,14 +57,22 @@ class Fetcher(threading.Thread):
 
                 if r.status_code is 200:
                     break
+        return r.text
 
-        return self.__insert2db(r.text, venue) # State machine
 
-    def __insert2db(self, data, venue):
-        # Create needed venue entries to database.
-        self.dbeng.pluginCreateVenueEntity(venue.eventSQLentity())
-        venueparsed = venue.parseEvents(data)
-        self.dbeng.insertVenueEvents(venueparsed)
+def insert2db(dbeng):
+    # Create needed venue entries to database.
+    # XXX Remove pickle handler once concurrency problems are fixed.
+
+    # And here we load the venues again, yes annoying. More memory/CPU
+    # efficient implementation on it's way.
+    for fname in glob.iglob("venues/*.pickle"):
+        venue = pickle.load(open(fname, "rb"))
+        # Create needed entries in venue table
+        dbeng.pluginCreateVenueEntity(venue.eventSQLentity())
+
+        for v in venue.parseddata:
+            dbeng.insertVenueEvents(v)
 
 def usage():
     print "usage: bandeventnotifier.py [fetch|gigs]"
@@ -68,10 +87,10 @@ def main():
     elif sys.argv[1] == "fetch":
         print "[-] Fetching LastFM user data."
 
-        lfmr = lastfmfetch.LastFmRetriever(dbeng)
-        [dbeng.insertLastFMartists(artist) \
-                for artist in lfmr.getAllListenedBands()]
-        print "[+] LastFM data fetched."
+        #lfmr = lastfmfetch.LastFmRetriever(dbeng)
+        #for artist in lfmr.getAllListenedBands():
+        #    dbeng.insertLastFMartists(artist)
+        #print "[+] LastFM data fetched."
 
         print "[-] Fetching venues data."
         fetchqueue = Queue()
@@ -84,6 +103,10 @@ def main():
             fetchqueue.put(venue)
         fetchqueue.join()
         print "[+] Venues data fetched."
+
+        print "[-] Inserting to database..."
+        insert2db(dbeng)
+
     elif sys.argv[2] == "gigs":
         print "Gigs you might be interested:"
         dbeng.showgigs()

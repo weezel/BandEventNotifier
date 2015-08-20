@@ -10,8 +10,10 @@ class Dogshome(object):
     def __init__(self):
         self.url = "http://www.dogshome.fi/index.php?id=4"
         self.name = "Dog's home"
+        self.fname = "dogshome.pickle"
         self.city = "Tampere"
         self.country = "Finland"
+        self.parseddata = None
 
         # Parsing patterns
         self.datestartpat = re.compile("^\d+\.\d+. ")

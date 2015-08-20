@@ -11,7 +11,6 @@ class DBEngine(object):
         self.conn = None
         self.cur = None
         self.__firstRun()
-        self.venues = dict()
 
     def __firstRun(self):
         if self.conn == None:
@@ -38,23 +37,20 @@ class DBEngine(object):
         self.cur.execute(q, venuedict)
         self.conn.commit()
 
-        # Query events now, will be {venue name : venueid}
-        self.venues.update({venuedict["name"] : self.cur.lastrowid})
-
-    def insertVenueEvents(self, venueaggr):
+    def insertVenueEvents(self, venue):
         """
-        Insert parsed events from a venue to database.
+        Insert parsed events from a venue into the database.
         """
-        for event in venueaggr:
-            # Replace venue by venueid
-            event["venueid"] = self.venues[event["venue"]] # This is venueid
-            event.pop("venue")
-            cols = ", ".join(event.keys())
-            placeholders = ":" + ", :".join(event.keys())
-            q = u"INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
-                    % (cols, placeholders)
-            self.cur.execute(q, event)
-        self.conn.commit() #XXX All processed, commit
+        # Replace venue by venueid
+        venue["venueid"] = self.getVenueByName(venue["venue"])[0]
+        # TODO Why do we have this keyword in the dict in general...
+        venue.pop("venue") # No such column in SQL db
+        cols = ", ".join(venue.keys())
+        placeholders = ":" + ", :".join(venue.keys())
+        q = u"INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
+                % (cols, placeholders)
+        self.cur.execute(q, venue)
+        self.conn.commit()
 
     def insertLastFMartists(self, artistdata):
         cols = ", ".join(artistdata.keys())
@@ -76,8 +72,10 @@ class DBEngine(object):
         return results.fetchone()
 
     def intersectLastFmAndEvents(self):
-        # TODO
-        pass
+        q = u"SELECT e.name, v.name, e.date, e.price " \
+           + "FROM event AS e, venue AS v "            \
+           + "WHERE e.venueid = v.id AND "
+        print q
 
 if __name__ == '__main__':
     import venues.plugin_dogshome

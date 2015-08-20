@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# Execute this file to see what plugins will be loaded.
+
 # Implementation leans to Lex Toumbourou's example:
 # https://lextoumbourou.com/blog/posts/dynamically-loading-modules-and-classes-in-python/
 
