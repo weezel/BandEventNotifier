@@ -29,8 +29,27 @@ should be sufficient, for now.
 	- API key for Last.fm.
 
 
+## Setup
+Create `APIKEYS` file under the repository and fill it in the following way:
+
+	lastfm username
+	lastfm password
+	lastfm API key
+	lastfm API secret
+
+Database won't get created automatically, yet, and therefore must be created
+manually:
+
+	$ sqlite3 bandevents.db
+
+Now, fetch some data and enjoy!
+
+	$ ./bandeventnotifier.py fetch
+
+or to get usage information, just run `./bandeventnotifier.py`.
+
 # LICENSE
-Software is BSD Licensed, please see `LICENSE` for more info.
+Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 ## TODO
 - [X] Fetch listening information from last.fm
