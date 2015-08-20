@@ -40,7 +40,7 @@ Create `APIKEYS` file under the repository and fill it in the following way:
 Database won't get created automatically, yet, and therefore must be created
 manually:
 
-	$ sqlite3 bandevents.db
+	$ sqlite3 bandevents.db < schema.sql
 
 Now, fetch some data and enjoy!
 
