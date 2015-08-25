@@ -73,6 +73,8 @@ def insert2db(dbeng):
 
         for v in venue.parseddata:
             dbeng.insertVenueEvents(v)
+        # Remove pickle file
+        os.remove(fname)
 
 def usage():
     print "usage: bandeventnotifier.py [fetch|gigs]"
