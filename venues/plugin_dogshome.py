@@ -5,12 +5,12 @@ from lxml import html
 import time
 import re
 
+class PluginParseError(Exception): pass
 
 class Dogshome(object):
     def __init__(self):
         self.url = "http://www.dogshome.fi/index.php?id=4"
         self.name = "Dog's home"
-        self.fname = "dogshome.pickle"
         self.city = "Tampere"
         self.country = "Finland"
         self.parseddata = None

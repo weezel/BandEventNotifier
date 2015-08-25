@@ -40,7 +40,7 @@ class Fetcher(threading.Thread):
 
             # XXX Pickle hack to dodge SQLite concurrency problems.
             venue.parseddata = venueparsed
-            fname = os.path.join("venues", venue.fname)
+            fname = os.path.join("venues", venue.__class__.__name__ + ".pickle")
             pickle.dump(venue, open(fname, "wb"))
 
             self.fetchqueue.task_done()
@@ -85,12 +85,12 @@ def main():
         dbeng.close()
         usage()
     elif sys.argv[1] == "fetch":
-        print "[-] Fetching LastFM user data."
+        #print "[-] Fetching LastFM user data."
 
-        lfmr = lastfmfetch.LastFmRetriever(dbeng)
-        for artist in lfmr.getAllListenedBands():
-            dbeng.insertLastFMartists(artist)
-        print "[+] LastFM data fetched."
+        #lfmr = lastfmfetch.LastFmRetriever(dbeng)
+        #for artist in lfmr.getAllListenedBands():
+        #    dbeng.insertLastFMartists(artist)
+        #print "[+] LastFM data fetched."
 
         print "[-] Fetching venues data."
         fetchqueue = Queue()
@@ -106,6 +106,7 @@ def main():
 
         print "[-] Inserting to database..."
         insert2db(dbeng)
+        print "[+] Venues added."
 
     elif sys.argv[2] == "gigs":
         print "Gigs you might be interested:"
