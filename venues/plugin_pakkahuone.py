@@ -84,15 +84,18 @@ class Pakkahuone(object):
 
     def parseEvents(self, data):
         #doc = lxml.html.parse("venues/pakkahuone.html").getroot()
-        doc = lxml.html.parse(self.url).getroot()
+        doc = lxml.html.fromstring(data).getroottree().getroot()
         eventtags = doc.xpath('//ul[@class="upcoming-events-list"]/li')
 
         for et in eventtags:
             yield self.parseEvent(et)
 
 if __name__ == '__main__':
-    p = Pakkahuone()
+    import requests
 
-    for e in p.parseEvents(""):
+    p = Pakkahuone()
+    r = requests.get(p.url)
+
+    for e in p.parseEvents(r.text):
         print e.values()
 
