@@ -83,15 +83,18 @@ class Klubi(object):
                     u"price" : price }
 
     def parseEvents(self, data):
-        doc = lxml.html.parse(self.url).getroot()
+        doc = lxml.html.fromstring(data).getroottree().getroot()
         eventtags = doc.xpath('//ul[@class="upcoming-events-list"]/li')
 
         for et in eventtags:
             yield self.parseEvent(et)
 
 if __name__ == '__main__':
-    k = Klubi()
+    import requests
 
-    for e in k.parseEvents(""):
+    k = Klubi()
+    r = requests.get(k.url)
+
+    for e in k.parseEvents(r.text):
         print e.values()
 
