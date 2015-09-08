@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from lxml import html
-
+import lxml.html
 import re
 
 
@@ -9,44 +8,109 @@ class Vastavirta(object):
     def __init__(self):
         self.data = None
 
-        self.url = "http://vastavirta.net/tulevat.html"
+        self.url = "http://vastavirta.net/fi/"
         self.name = "Vastavirta"
+        self.city = "Tampere"
+        self.country = "Finland"
+        self.parseddata = None
+        self.monthmap = {   \
+                "Tam" : 1,  \
+                "Hel" : 2,  \
+                "Maa" : 3,  \
+                "Huh" : 4,  \
+                "Tou" : 5,  \
+                "Kes" : 6,  \
+                "Hei" : 7,  \
+                "Elo" : 8,  \
+                "Syy" : 9,  \
+                "Lok" : 10, \
+                "Mar" : 11, \
+                "Jou" : 12 }
+
+        # Parsing patterns
+        self.monetarypattern = re.compile("[0-9.,]+ e")
 
     def getVenueName(self):
         return self.name
 
-    def parseArtists(self, data):
-        pass
+    def getCity(self):
+        return self.city
 
-    def clean_output(self, text):
-        tmp = re.sub("\s+", " ", text)
-        tmp = re.sub("\t+", " ", tmp)
-        return re.sub("[\r\n]+", "", tmp).lstrip(" ")
+    def getCountry(self):
+        return self.country
+
+    def eventSQLentity(self):
+        return { u"name" : self.name, \
+                 u"city" : self.city, \
+                 u"country" : self.country }
+
+    def parsePrice(self, tag):
+        parsedprice = tag.xpath('./*/div[@class="event-details"]/*/text()')
+        prices = " ".join(parsedprice).replace(u"€", u"e")
+        regexprice = re.findall(self.monetarypattern, prices)
+
+        if regexprice:
+            return u"%s €" % (" ".join(regexprice).replace(" e", ""))
+        else:
+            return u"0 €"
+
+    def parseDate(self, tag):
+        day = tag.xpath('./*/div[@class="start-date"]/div[@class="event-day"]/text()')
+        m = tag.xpath('./*/div[@class="start-date"]/div[@class="event-month"]/text()')
+        year = tag.xpath('./*/div[@class="start-date"]/div[@class="event-year"]/text()')
+
+        day = " ".join(day)
+        month = " ".join(m)
+        year = " ".join(year)
+
+        if day is "" or month is "" or year is "":
+            return ""
+
+        month = self.monthmap[month]
+        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+
+    def parseEvent(self, event):
+        date = self.parseDate(event)
+        etitle = " ".join(event.xpath('./*/div[@class="event-title"]/*/text()'))
+        prices = self.parsePrice(event)
+
+        return { u"venue" : self.getVenueName(), \
+                 u"date" : date,                 \
+                 u"name" : etitle,               \
+                 u"price" : prices }
 
     def parseEvents(self, data):
-        doc = html.parse("vastavirta.html").getroot()
-        for e in doc.cssselect('table > tr > td')[3]:
-            for elem in e.cssselect("font"):
-                parsed = elem.text
+        doc = lxml.html.fromstring(data).getroottree().getroot()
+        tags = doc.xpath('//div[@class="event-list"]/ul' \
+                       + '[@class="event-list-view"]'    \
+                       + '/li[@class="event "]')
+        tmp = u""
 
-                if elem.items()[0][1] != "#000000":
-                    continue
-                if type(parsed) is type(str()) or type(parsed) is type(unicode()):
-                #if parsed == None or type(parsed) == list() or \
-                #        parsed.startswith(u"Kaikkien keikkojen") or \
-                #        parsed.startswith(u"Muutokset mahdollisia"):
-                #    continue
-                #print type(elem.items()[0][1]) #["color"]
-                    #print elem.items()[0][1]
+        for event in reversed(tags):
+            parsed = self.parseEvent(event)
 
-                    #print type(elem)
-                    cleaned = self.clean_output(parsed)
-                    print "%s" % cleaned
+            if parsed["date"] == "":
+                tmp += ", " + parsed["name"]
+            else:
+                parsed ["name"] += tmp
+                #print "%s: %s" % (parsed["date"], parsed["name"])
+                yield parsed
+                #yield { u"venue" : self.getVenueName(),   \
+                #        u"date" : parsed["date"]          \
+                #        u"name" : parsed["name"], \
+                #        u"price" : parsed["prices"] }
+                tmp = u""
 
 
 if __name__ == '__main__':
     import requests
 
-    p = Vastavirta()
-    p.parseEvents("")
+    v = Vastavirta()
+    r = requests.get(v.url)
+
+    #with open("venues/vastavirta.html") as f:
+    #    r = f.read()
+
+    for event in v.parseEvents(r.text):
+        print event.values()
 
