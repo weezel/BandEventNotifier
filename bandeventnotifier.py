@@ -106,11 +106,11 @@ def main():
         fetchqueue.join()
         print "[+] Venues data fetched."
 
-        print "[-] Inserting to database..."
+        print "[-] Inserting into a database..."
         insert2db(dbeng)
-        print "[+] Venues added."
+        print "[+] Venues added into the database."
 
-    elif sys.argv[2] == "gigs":
+    elif sys.argv[1] == "gigs":
         print "Gigs you might be interested:"
         dbeng.showgigs()
     else:
