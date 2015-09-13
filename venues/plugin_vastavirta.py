@@ -93,14 +93,8 @@ class Vastavirta(object):
                 tmp += ", " + parsed["name"]
             else:
                 parsed ["name"] += tmp
-                #print "%s: %s" % (parsed["date"], parsed["name"])
                 yield parsed
-                #yield { u"venue" : self.getVenueName(),   \
-                #        u"date" : parsed["date"]          \
-                #        u"name" : parsed["name"], \
-                #        u"price" : parsed["prices"] }
                 tmp = u""
-
 
 if __name__ == '__main__':
     import requests
