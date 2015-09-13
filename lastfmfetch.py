@@ -26,16 +26,18 @@ class LastFmRetriever(object):
              self.__apikey,      \
              self.__apisecret = self.__readAPIkeyUserInfo(FNAME)
 
-    def __dbInit(self, db):
+    def __dbInit(self, db): # TODO Currently this isn't being utilized
         if db == None:
             self.db = db
 
     def __readAPIkeyUserInfo(self, fname):
         """
         First line must include username.
-        Second line must include password.
-        Third line must include API key.
-        Fourth line must include API secret.
+
+        The following three lines are optional:
+        Second line can include password.
+        Third line can include API key.
+        Fourth line can include API secret.
         """
         data = list()
 
@@ -43,9 +45,12 @@ class LastFmRetriever(object):
             for line in f:
                 data.append(line.replace("\n", ""))
 
-        if len(data) < 4:
+        if len(data) == 1:
+            return (data[0], None, None, None)
+        elif len(data) == 4:
+            return (data[0], pylast.md5(data[1]), data[2], data[3])
+        else:
             raise LfmAPIkeyError("Error while reading API key and secret.")
-        return (data[0], pylast.md5(data[1]), data[2], data[3])
 
     def getAllListenedBands(self, limit=None):
         """
@@ -73,31 +78,48 @@ class LastFmRetriever(object):
         totalplaycount = sum([artist.playcount for artist in allbands])
         return float(thisband.playcount) / totalplaycount * 1000
 
-    def nonAPIparser(self, username):
+    def nonAPIparser(self):
         """
         New LastFM is broken in many ways. This method omits their API and
         parses data directly from the website.
         """
         pageidx = 1
-        libraryurl = "http://www.last.fm/user/%s/library/artists?page=%s" % \
-                     (username, pageidx)
         p = re.compile("[0-9,]+")
+        libraryurl = "http://www.last.fm/user/%s/library/artists?page=1" % \
+                     (self.__username)
         html = requests.get(libraryurl)
         site = lxml.html.fromstring(html.text).getroottree().getroot()
 
-        for libitem in site.xpath('//tbody/tr'):
-            artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
-            artist = " ".join(artist)
+        pagestag = site.xpath('//ul[@class="pagination"]' \
+                              +'/li[@class="pages"]/text()')
+        pagescount = re.findall("[0-9,]+", " ".join(pagestag)) # [1, n]
+        if len(pagescount) == 0:
+            pagescount = 1 # Otherwise loop would be skipped
+        else:
+            pagescount = int(pagescount[1])
 
-            playcount = libitem.xpath('./td[@class="chartlist-countbar"]/span/span/a/text()')
-            playcount = " ".join(playcount)
-            pcount = re.search(p, playcount)
-            if pcount == None:
-                raise PlaycountParseError
-            pcount = pcount.group().replace(",", "")
+        # Go through the all pages
+        while pageidx <= pagescount:
+            for libitem in site.xpath('//tbody/tr'):
+                artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
+                artist = " ".join(artist)
 
-            print {u"name" : artist, \
-                   u"playcount" : pcount}
+                playcount = libitem.xpath('./td[@class="chartlist-countbar"]/span/span/a/text()')
+                playcount = " ".join(playcount)
+                pcount = re.search(p, playcount)
+                if pcount == None:
+                    raise PlaycountParseError
+                pcount = pcount.group().replace(",", "")
+
+                yield {u"name" : artist, \
+                       u"playcount" : pcount}
+
+            # Fetch the next page
+            pageidx += 1
+            libraryurl = "http://www.last.fm/user/%s/library/artists?page=%s" % \
+                         (self.__username, pageidx)
+            html = requests.get(libraryurl)
+            site = lxml.html.fromstring(html.text).getroottree().getroot()
 
 if __name__ == '__main__':
     allbands = list()
@@ -105,5 +127,6 @@ if __name__ == '__main__':
 
     #for i in lfmr.getAllListenedBands(2):
     #    print "%s"  % (i)
-    lfmr.nonAPIparser("weezel_ding")
+    for i in lfmr.nonAPIparser():
+        print "%s" % (i)
 
