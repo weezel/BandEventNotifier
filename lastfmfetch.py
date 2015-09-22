@@ -4,7 +4,7 @@
 import lxml.html
 try:
     import pylast
-    havePyLast = True
+    havePyLast = True # XXX Not used, yet
 except ImportError:
     havePyLast = False
 import re
