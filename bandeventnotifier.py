@@ -12,6 +12,7 @@ from Queue import Queue
 import dbengine
 from plugin_handler import load_venue_plugins
 import lastfmfetch
+import utils
 
 MAX_THREADS = 6
 
@@ -58,7 +59,6 @@ class Fetcher(threading.Thread):
                 if r.status_code is 200:
                     break
         return r.text
-
 
 def insert2db(dbeng):
     # Create needed venue entries to database.
@@ -110,10 +110,17 @@ def main():
         insert2db(dbeng)
         print "[+] Venues added into the database."
 
-    elif sys.argv[1] == "gigs":
+    elif sys.argv[1] == "gigs": # XXX Should implement this with FTS
         print "Gigs you might be interested:"
-        for event in dbeng.allGigs():
-            print "[%s] %s: %s" % (event[0], event[1], event[2])
+        for artist in dbeng.getArtists():
+            for event in dbeng.getAllGigs():
+                if artist["artist"].lower() in event[2].lower():
+                    print utils.colorize("ARTIST: %s, PLAYCOUNT: %d" % \
+                            (artist["artist"], artist["playcount"]),   \
+                            "yellow")
+                    print u"[%s] %s: %s" % (event[0], event[1], event[2])
+            #map(lamda f: f.lower() in event, event(2) listened_bands.
+            #print "[%s] %s: %s" % (event[0], event[1], event[2])
     else:
         usage()
 
