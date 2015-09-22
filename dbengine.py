@@ -71,12 +71,25 @@ class DBEngine(object):
         results = self.cur.execute(q, [vname])
         return results.fetchone()
 
-    def allGigs(self):
-        q = "SELECT DISTINCT e.date, v.name, e.name "                    \
-          + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
-          + "GROUP BY e.date, v.name ORDER BY e.date;"
+    def getAllGigs(self):
+        q = u"SELECT DISTINCT e.date, v.name, e.name "                    \
+           + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
+           + "GROUP BY e.date, v.name ORDER BY e.date;"
         results = self.cur.execute(q)
         return results.fetchall()
+
+    def getArtists(self):
+        q = u"SELECT name, playcount FROM artist;"
+        results = self.cur.execute(q)
+        for artist, playcount in results.fetchall():
+            yield {u"artist" : artist, \
+                   u"playcount" : playcount}
+
+    def getArtist(self, aname):
+        pass # TODO
+
+    def purgeOldEvents(self):
+        pass # TODO
 
 if __name__ == '__main__':
     import venues.plugin_dogshome
