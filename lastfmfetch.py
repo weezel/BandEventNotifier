@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import lxml.html
-import pylast
+try:
+    import pylast
+    havePyLast = True
+except ImportError:
+    havePyLast = False
 import re
 import requests
 

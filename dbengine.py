@@ -71,11 +71,12 @@ class DBEngine(object):
         results = self.cur.execute(q, [vname])
         return results.fetchone()
 
-    def intersectLastFmAndEvents(self):
-        q = u"SELECT e.name, v.name, e.date, e.price " \
-           + "FROM event AS e, venue AS v "            \
-           + "WHERE e.venueid = v.id AND "
-        print q
+    def allGigs(self):
+        q = "SELECT DISTINCT e.date, v.name, e.name "                    \
+          + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
+          + "GROUP BY e.date, v.name ORDER BY e.date;"
+        results = self.cur.execute(q)
+        return results.fetchall()
 
 if __name__ == '__main__':
     import venues.plugin_dogshome

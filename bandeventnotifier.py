@@ -112,7 +112,8 @@ def main():
 
     elif sys.argv[1] == "gigs":
         print "Gigs you might be interested:"
-        dbeng.showgigs()
+        for event in dbeng.allGigs():
+            print "[%s] %s: %s" % (event[0], event[1], event[2])
     else:
         usage()
 

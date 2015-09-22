@@ -25,6 +25,7 @@ should be sufficient, for now.
 - Requests
 - Sqlite3
 - Lxml
+- Cssselect
 - Pylast
 	- API key for Last.fm.
 
