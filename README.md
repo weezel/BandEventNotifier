@@ -38,6 +38,10 @@ Create `APIKEYS` file under the repository and fill it in the following way:
 	lastfm API key
 	lastfm API secret
 
+or alternatively just a username:
+
+	my-lastfm-name
+
 Database won't get created automatically, yet, and therefore must be created
 manually:
 
