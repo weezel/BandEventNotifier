@@ -78,9 +78,9 @@ class Klubi(object):
                                + '/span[@class="price"]/text()')))
 
             return { u"venue" : self.getVenueName(),  \
-                    u"date" : date,                   \
-                    u"name" : "%s%s %s" % (title, artist, desc), \
-                    u"price" : price }
+                     u"date" : date,                   \
+                     u"name" : "%s%s %s" % (title, artist, desc), \
+                     u"price" : price }
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data).getroottree().getroot()
