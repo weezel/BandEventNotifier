@@ -77,7 +77,7 @@ def insert2db(dbeng):
         os.remove(fname)
 
 def usage():
-    print "usage: bandeventnotifier.py [fetch|gigs]"
+    print "usage: bandeventnotifier.py [fetch|gigs|purge]"
     sys.exit(1)
 
 def main():
@@ -112,24 +112,27 @@ def main():
 
     elif sys.argv[1] == "gigs": # XXX Should implement this with FTS
         print "Gigs you might be interested:"
-        for artist in dbeng.getArtists():
-            for event in dbeng.getAllGigs():
+        for event in dbeng.getAllGigs():
+            for artist in dbeng.getArtists():
                 artistname = artist["artist"].lower().split(" ")
 
                 # More than one word in artist's name
                 if len(artistname) > 1:
                     if " ".join(artistname) in event[2].lower():
-                        print utils.colorize("ARTIST: %s, PLAYCOUNT: %d" % \
+                        print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
                                 (artist["artist"], artist["playcount"]),   \
                                 "yellow")
                         print u"[%s] %s: %s" % (event[0], event[1], event[2])
                 # Singly worded artist name
                 else:
                     if artistname in event[2].lower().split(" "):
-                        print utils.colorize("ARTIST: %s, PLAYCOUNT: %d" % \
+                        print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
                                 (artist["artist"], artist["playcount"]),   \
                                 "yellow")
                         print u"[%s] %s: %s" % (event[0], event[1], event[2])
+    elif sys.argv[1] == "purge":
+        print "Purging past events..."
+        dbeng.purgeOldEvents()
     else:
         usage()
 

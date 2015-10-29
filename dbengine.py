@@ -74,7 +74,7 @@ class DBEngine(object):
     def getAllGigs(self):
         q = u"SELECT DISTINCT e.date, v.name, e.name "                    \
            + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
-           + "GROUP BY e.date, v.name ORDER BY e.date;"
+           + "GROUP BY e.date, v.name ORDER BY e.date ASC;"
         results = self.cur.execute(q)
         return results.fetchall()
 
@@ -94,7 +94,10 @@ class DBEngine(object):
                     u"playcount" : playcount }
 
     def purgeOldEvents(self):
-        pass # TODO
+        q = u"DELETE FROM event " \
+           + "WHERE strftime('%Y-%m-%d', date) < date('now');"
+        self.cur.execute(q)
+        self.conn.commit()
 
 if __name__ == '__main__':
     db = DBEngine()
@@ -118,9 +121,6 @@ if __name__ == '__main__':
         lfmr = lastfmfetch.LastFmRetriever(db)
         for artist in lfmr.getAllListenedBands(limit=5):
             db.insertLastFMartists(artist)
-
-    for artist in db.getArtist(u"Om"):
-        print "%s [playcount %d]" % (artist["artist"], artist["playcount"])
 
     db.close()
 
