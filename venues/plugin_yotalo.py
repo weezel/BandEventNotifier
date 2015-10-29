@@ -45,7 +45,7 @@ class Yotalo(object):
         #   12 Euroa
         prices = re.findall("[0-9.,]+([ ]) e(uroa)?", line, flags=re.IGNORECASE)
         #print "PRICES: %s" % prices
-        return u"%s €" % ", ".join(prices)
+        return u"%s €" % "/".join(prices)
 
     def parseDate(self, line):
         year = int(time.strftime("%Y"))
@@ -94,7 +94,6 @@ class Yotalo(object):
 
         for item in doc.xpath('//div[@id="left"]/div[@class="item"]'):
             yield self.parseEvent(item)
-        #            u"price" : "/".join(self.parsePrice(event)) }
 
 if __name__ == '__main__':
     import requests
