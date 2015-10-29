@@ -108,7 +108,8 @@ class LastFmRetriever(object):
                 artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
                 artist = " ".join(artist)
 
-                playcount = libitem.xpath('./td[@class="chartlist-countbar"]/span/span/a/text()')
+                playcount = libitem.xpath('./td[@class="chartlist-countbar"]' \
+                                        + '/span/span/a/text()')
                 playcount = " ".join(playcount)
                 pcount = re.search(p, playcount)
                 if pcount == None:
@@ -120,8 +121,8 @@ class LastFmRetriever(object):
 
             # Fetch the next page
             pageidx += 1
-            libraryurl = "http://www.last.fm/user/%s/library/artists?page=%s" % \
-                         (self.__username, pageidx)
+            libraryurl = "http://www.last.fm/user/%s/library/artists?page=%s" \
+                    % (self.__username, pageidx)
             html = requests.get(libraryurl)
             site = lxml.html.fromstring(html.text).getroottree().getroot()
 
