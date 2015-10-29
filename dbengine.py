@@ -86,29 +86,41 @@ class DBEngine(object):
                    u"playcount" : playcount}
 
     def getArtist(self, aname):
-        pass # TODO
+        q = u"SELECT name, playcount FROM artist " \
+           + "WHERE name = ? LIMIT 5;"
+        results = self.cur.execute(q, [aname])
+        for artist, playcount in results.fetchall():
+            yield { u"artist" : artist, \
+                    u"playcount" : playcount }
 
     def purgeOldEvents(self):
         pass # TODO
 
 if __name__ == '__main__':
-    import venues.plugin_dogshome
-
     db = DBEngine()
-    doggari = venues.plugin_dogshome.Dogshome()
 
-    db.pluginCreateVenueEntity(doggari.eventSQLentity())
-    assert(db.getVenues() == [(1, u"Dog's home", u'Tampere', u'Finland')])
-    assert(db.getVenueByName("Dog's home") == (1, u"Dog's home", u'Tampere', u'Finland'))
-    assert(db.getVenueByName("Testijuottola that should fail") == None)
-    #db.insertVenueEvents(doggari.parseEvents(""))
+    def testDogsHomePlugin():
+        import venues.plugin_dogshome
 
-    ### Test LastFM retriever
-    import lastfmfetch
+        doggari = venues.plugin_dogshome.Dogshome()
 
-    lfmr = lastfmfetch.LastFmRetriever(db)
-    for artist in lfmr.getAllListenedBands(limit=5):
-        db.insertLastFMartists(artist)
+        db.pluginCreateVenueEntity(doggari.eventSQLentity())
+        assert(db.getVenues() == [(1, u"Dog's home", u'Tampere', u'Finland')])
+        assert(db.getVenueByName("Dog's home") == (1, u"Dog's home", \
+               u'Tampere', u'Finland'))
+        assert(db.getVenueByName("Testijuottola that should fail") == None)
+        db.insertVenueEvents(doggari.parseEvents(""))
+
+    def testLastFmFetch():
+        ## Test LastFM retriever
+        import lastfmfetch
+
+        lfmr = lastfmfetch.LastFmRetriever(db)
+        for artist in lfmr.getAllListenedBands(limit=5):
+            db.insertLastFMartists(artist)
+
+    for artist in db.getArtist(u"Om"):
+        print "%s [playcount %d]" % (artist["artist"], artist["playcount"])
 
     db.close()
 
