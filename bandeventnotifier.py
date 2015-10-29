@@ -114,13 +114,22 @@ def main():
         print "Gigs you might be interested:"
         for artist in dbeng.getArtists():
             for event in dbeng.getAllGigs():
-                if artist["artist"].lower() in event[2].lower():
-                    print utils.colorize("ARTIST: %s, PLAYCOUNT: %d" % \
-                            (artist["artist"], artist["playcount"]),   \
-                            "yellow")
-                    print u"[%s] %s: %s" % (event[0], event[1], event[2])
-            #map(lamda f: f.lower() in event, event(2) listened_bands.
-            #print "[%s] %s: %s" % (event[0], event[1], event[2])
+                artistname = artist["artist"].lower().split(" ")
+
+                # More than one word in artist's name
+                if len(artistname) > 1:
+                    if " ".join(artistname) in event[2].lower():
+                        print utils.colorize("ARTIST: %s, PLAYCOUNT: %d" % \
+                                (artist["artist"], artist["playcount"]),   \
+                                "yellow")
+                        print u"[%s] %s: %s" % (event[0], event[1], event[2])
+                # Singly worded artist name
+                else:
+                    if artistname in event[2].lower().split(" "):
+                        print utils.colorize("ARTIST: %s, PLAYCOUNT: %d" % \
+                                (artist["artist"], artist["playcount"]),   \
+                                "yellow")
+                        print u"[%s] %s: %s" % (event[0], event[1], event[2])
     else:
         usage()
 
