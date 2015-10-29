@@ -43,11 +43,16 @@ class Dogshome(object):
         return map(lambda p: p.replace(" ", "").strip(","), prices)
 
     def parseDate(self, line):
-        # TODO Doesn't handle year changes yet.
+        month_now = time.strftime("%m")
+
         date = re.search(self.datestartpat, line)
         if date is not None:
             year = time.strftime("%Y")
+
             day, month = date.group().strip(" ").rstrip(".").split(".")
+            # Are we on the new year already?
+            if int(month) < int(month_now):
+                year += 1
             date = "%s-%s-%s" % (year, month, day)
         else:
             date = ""
