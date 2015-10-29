@@ -84,11 +84,8 @@ if __name__ == '__main__':
     import requests
 
     d = Dogshome()
-    #r = requests.get(d.url)
-    with open("venues/dogshome.html", "r") as f:
-        r = f.read()
-    #daa = d.parseEvents(r.text)
-    daa = d.parseEvents(r)
+    r = requests.get(d.url)
+    daa = d.parseEvents(r.text)
 
     for i in daa:
         print "Keys = %s" % i.keys()
