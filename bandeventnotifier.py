@@ -110,26 +110,33 @@ def main():
         insert2db(dbeng)
         print "[+] Venues added into the database."
 
-    elif sys.argv[1] == "gigs": # XXX Should implement this with FTS
-        print "Gigs you might be interested:"
+    elif sys.argv[1] == "gigs":
+        print utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline")
+
         for event in dbeng.getAllGigs():
             for artist in dbeng.getArtists():
+                printEvent = False
                 artistname = artist["artist"].lower().split(" ")
 
                 # More than one word in artist's name
                 if len(artistname) > 1:
                     if " ".join(artistname) in event[2].lower():
-                        print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
-                                (artist["artist"], artist["playcount"]),   \
-                                "yellow")
-                        print u"[%s] %s: %s" % (event[0], event[1], event[2])
+                        printEvent = True
                 # Singly worded artist name
                 else:
                     if artistname in event[2].lower().split(" "):
+                        printEvent = True
+
+                if printEvent:
                         print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
-                                (artist["artist"], artist["playcount"]),   \
-                                "yellow")
-                        print u"[%s] %s: %s" % (event[0], event[1], event[2])
+                                            (artist["artist"],            \
+                                             artist["playcount"]),        \
+                                            "yellow")
+                        print u"[%s] %s\n%s\n" % \
+                                (utils.colorize(event[0], "bold"), \
+                                 utils.colorize(event[1], "cyan"), \
+                                 event[2])
+
     elif sys.argv[1] == "purge":
         print "Purging past events..."
         dbeng.purgeOldEvents()
