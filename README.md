@@ -1,9 +1,6 @@
 # BandEventNotifier
 Notify incoming gigs regarding the listened artists on Last.FM.
 
--- CURRENTLY THIS IS IN BETA VERSION, DON'T EXPECT ANYTHING --
-
-
 ## Motivation
 I am a frequent visitor of live music performances.
 At times I miss gigs I'd like to see.
@@ -25,9 +22,9 @@ should be sufficient, for now.
 - Requests
 - Sqlite3
 - Lxml
-- Cssselect
 - Pylast
-	- API key for Last.fm.
+	- API key for Last.fm (This isn't needed anymore. Will do the code
+	  adjusments in the near future)
 
 
 ## Setup
@@ -57,6 +54,12 @@ or to get usage information, just run `./bandeventnotifier.py`.
 Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 ## TODO
+- [ ] Better error handling for plugins
+
+- [ ] Be more verbose when fetching data
+
+- [ ] Improve (dev) documentation
+
 - [X] Fetch listening information from last.fm
 
 - [X] Dynamic plugin loader for evenues
@@ -66,9 +69,6 @@ Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 - [X] Implement threaded fetcher. Initializes plugins (venues) and stores
   fetched events into a database.
 
-- [ ] Style clean ups
-
-- [ ] Maturing and cleaning
 
 ## Developer information
 ### Implementing a new venue parser
