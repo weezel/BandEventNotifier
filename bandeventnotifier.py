@@ -77,7 +77,7 @@ def insert2db(dbeng):
         os.remove(fname)
 
 def usage():
-    print "usage: bandeventnotifier.py [fetch|gigs|purge]"
+    print "usage: bandeventnotifier.py [fetch[lastfm|venues]|gigs|purge]"
     sys.exit(1)
 
 def main():
@@ -87,29 +87,33 @@ def main():
         dbeng.close()
         usage()
     elif sys.argv[1] == "fetch":
-        print "[-] Fetching LastFM user data."
+        if len(sys.argv) < 3:
+            print "fetch: [lastfm|venues]"
+            usage()
+        elif sys.argv[2] == "lastfm":
+            print "[-] Fetching LastFM user data."
+            lfmr = lastfmfetch.LastFmRetriever(dbeng)
+            for artist in lfmr.nonAPIparser():
+                dbeng.insertLastFMartists(artist)
+            print "[+] LastFM data fetched."
+        elif sys.argv[2] == "venues":
+            print "[-] Fetching venues data."
+            fetchqueue = Queue()
+            venues = load_venue_plugins()
+            for v in range(MAX_THREADS):
+                t = Fetcher(fetchqueue, dbeng)
+                t.setDaemon(True)
+                t.start()
+            for venue in venues:
+                fetchqueue.put(venue)
+            fetchqueue.join()
+            print "[+] Venues data fetched."
 
-        lfmr = lastfmfetch.LastFmRetriever(dbeng)
-        for artist in lfmr.nonAPIparser():
-            dbeng.insertLastFMartists(artist)
-        print "[+] LastFM data fetched."
-
-        print "[-] Fetching venues data."
-        fetchqueue = Queue()
-        venues = load_venue_plugins()
-        for v in range(MAX_THREADS):
-            t = Fetcher(fetchqueue, dbeng)
-            t.setDaemon(True)
-            t.start()
-        for venue in venues:
-            fetchqueue.put(venue)
-        fetchqueue.join()
-        print "[+] Venues data fetched."
-
-        print "[-] Inserting into a database..."
-        insert2db(dbeng)
-        print "[+] Venues added into the database."
-
+            print "[-] Inserting into a database..."
+            insert2db(dbeng)
+            print "[+] Venues added into the database."
+        else:
+            usage()
     elif sys.argv[1] == "gigs":
         print utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline")
 
