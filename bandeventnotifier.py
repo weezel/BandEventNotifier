@@ -36,8 +36,14 @@ class Fetcher(threading.Thread):
             venuehtml = self.__fetch(venue)
 
             venueparsed = list()
-            for i in venue.parseEvents(venuehtml):
-                venueparsed.append(i)
+            try:
+                for i in venue.parseEvents(venuehtml):
+                    venueparsed.append(i)
+            except TypeError, te:
+                print "%s Error while parsing %s plugin" % \
+                        (utils.colorize("/_!_\\", "red"),    \
+                         venue.getVenueName())
+                self.fetchqueue.task_done()
 
             # XXX Pickle hack to dodge SQLite concurrency problems.
             venue.parseddata = venueparsed
