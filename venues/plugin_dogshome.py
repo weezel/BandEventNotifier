@@ -43,11 +43,10 @@ class Dogshome(object):
 
     def parseDate(self, line):
         month_now = time.strftime("%m")
+        year = int(time.strftime("%Y"))
 
         date = re.search(self.datestartpat, line)
         if date is not None:
-            year = time.strftime("%Y")
-
             day, month = date.group().strip(" ").rstrip(".").split(".")
             # Are we on the new year already?
             if int(month) < int(month_now):
