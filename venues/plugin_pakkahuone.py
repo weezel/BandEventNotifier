@@ -36,8 +36,7 @@ class Pakkahuone(object):
                  u"country" : self.country }
 
     def parsePrice(self, line):
-        return u"0€" if line == "-" else u"%s€" % line
-        #return map(lambda p: p.replace(" ", "").strip(","), prices)
+        return u"0" if line == "-" else u"%s€" % line
 
     def parseDate(self, tag):
         date = re.search(self.datepat, tag)
@@ -97,5 +96,7 @@ if __name__ == '__main__':
     r = requests.get(p.url)
 
     for e in p.parseEvents(r.text):
-        print e.values()
+        for k, v in e.iteritems():
+            print "%-10s: %s" % (k, v)
+        print
 
