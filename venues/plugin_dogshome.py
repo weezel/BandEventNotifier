@@ -38,6 +38,8 @@ class Dogshome(object):
 
     def parsePrice(self, line):
         prices = re.findall(self.monetarypattern, line)
+        if len(prices) < 1:
+            return u"0"
 
         return "/".join(prices)
 
@@ -87,7 +89,7 @@ if __name__ == '__main__':
     daa = d.parseEvents(r.text)
 
     for i in daa:
-        print "Keys = %s" % i.keys()
-        print "Data = %s" % i
+        for k, v in i.iteritems():
+            print "%-10s: %s" % (k, v)
         print
 
