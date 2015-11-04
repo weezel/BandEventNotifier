@@ -27,9 +27,6 @@ class Vastavirta(object):
                 "Mar" : 11, \
                 "Jou" : 12 }
 
-        # Parsing patterns
-        self.monetarypattern = re.compile("[0-9.,]+ e")
-
     def getVenueName(self):
         return self.name
 
@@ -45,14 +42,13 @@ class Vastavirta(object):
                  u"country" : self.country }
 
     def parsePrice(self, tag):
-        parsedprice = tag.xpath('./*/div[@class="event-details"]/*/text()')
-        prices = " ".join(parsedprice).replace(u"€", u"e")
-        regexprice = re.findall(self.monetarypattern, prices)
+        parsedprice = tag.xpath('.//div[@class="event-details"]/*/text()')
+        prices = " ".join(parsedprice)
 
-        if regexprice:
-            return u"%s €" % (" ".join(regexprice).replace(" e", ""))
+        if prices:
+            return u"%s" % (prices)
         else:
-            return u"0 €"
+            return u"0"
 
     def parseDate(self, tag):
         day = tag.xpath('./*/div[@class="start-date"]/div[@class="event-day"]/text()')
@@ -106,5 +102,7 @@ if __name__ == '__main__':
     #    r = f.read()
 
     for event in v.parseEvents(r.text):
-        print event.values()
+        for k, v in event.iteritems():
+            print "%-10s: %s" % (k, v)
+        print
 
