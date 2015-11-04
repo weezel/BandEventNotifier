@@ -22,7 +22,7 @@ should be sufficient, for now.
 - Requests
 - Sqlite3
 - Lxml
-- Pylast
+- Pylast (optional)
 	- API key for Last.fm (This isn't needed anymore. Will do the code
 	  adjusments in the near future)
 
