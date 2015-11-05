@@ -16,6 +16,9 @@ to parse venue programmes only.
 I visit cities and countries to see bands, therefore parsing venue sites only
 should be sufficient, for now.
 
+## Screenshot
+![BandEventNotifier](ben.png)
+
 
 ## Dependencies
 - Python 2.7.x
