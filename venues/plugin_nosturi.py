@@ -104,5 +104,7 @@ if __name__ == '__main__':
     r = requests.get(k.url)
 
     for e in k.parseEvents(r.text):
-        print e
+        for k, v in e.iteritems():
+            print "%-10s: %s" % (k, v)
+        print
 
