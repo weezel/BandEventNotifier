@@ -57,11 +57,13 @@ or to get usage information, just run `./bandeventnotifier.py`.
 Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 ## TODO
-- [ ] Better error handling for plugins
+- [ ] Sort plugins per Country/City/venuename
 
 - [ ] Be more verbose when fetching data
 
 - [ ] Improve (dev) documentation
+
+- [X] Better error handling for plugins
 
 - [X] Fetch listening information from last.fm
 
