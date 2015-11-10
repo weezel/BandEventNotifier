@@ -127,14 +127,15 @@ def main():
             for artist in dbeng.getArtists():
                 printEvent = False
                 artistname = artist["artist"].lower().split(" ")
+                eventartists = event[2].lower()
 
-                # More than one word in artist's name
-                if len(artistname) > 1:
-                    if " ".join(artistname) in event[2].lower():
-                        printEvent = True
                 # Singly worded artist name
+                if len(artistname) ==  1:
+                    if artistname[0] in eventartists.split(" "):
+                        printEvent = True
+                # More than one word in artist's name
                 else:
-                    if artistname in event[2].lower().split(" "):
+                    if " ".join(artistname) in eventartists:
                         printEvent = True
 
                 if printEvent:
@@ -146,6 +147,7 @@ def main():
                                 (utils.colorize(event[0], "bold"), \
                                  utils.colorize(event[1], "cyan"), \
                                  event[2])
+                        break # We are done, found already a matching artist
 
     elif sys.argv[1] == "purge":
         print "Purging past events..."
