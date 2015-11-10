@@ -57,7 +57,7 @@ or to get usage information, just run `./bandeventnotifier.py`.
 Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 ## TODO
-- [ ] Sort plugins per Country/City/venuename
+- [ ] Sort plugins by Country/City/venuename
 
 - [ ] Be more verbose when fetching data
 
