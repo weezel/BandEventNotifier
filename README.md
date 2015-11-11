@@ -57,6 +57,8 @@ or to get usage information, just run `./bandeventnotifier.py`.
 Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 ## TODO
+- [ ] Change row\_factor to sqlite3.Row
+
 - [ ] Sort plugins by Country/City/venuename
 
 - [ ] Be more verbose when fetching data
