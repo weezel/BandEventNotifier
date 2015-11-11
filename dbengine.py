@@ -72,7 +72,7 @@ class DBEngine(object):
         return results.fetchone()
 
     def getAllGigs(self):
-        q = u"SELECT DISTINCT e.date, v.name, e.name "                    \
+        q = u"SELECT DISTINCT e.date, v.name, v.city, e.name "            \
            + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
            + "GROUP BY e.date, v.name ORDER BY e.date ASC;"
         results = self.cur.execute(q)

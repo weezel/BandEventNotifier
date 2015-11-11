@@ -127,7 +127,7 @@ def main():
             for artist in dbeng.getArtists():
                 printEvent = False
                 artistname = artist["artist"].lower().split(" ")
-                eventartists = event[2].lower()
+                eventartists = event[3].lower()
 
                 # Singly worded artist name
                 if len(artistname) ==  1:
@@ -139,15 +139,15 @@ def main():
                         printEvent = True
 
                 if printEvent:
-                        print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
-                                            (artist["artist"],            \
-                                             artist["playcount"]),        \
-                                            "yellow")
-                        print u"[%s] %s\n%s\n" % \
-                                (utils.colorize(event[0], "bold"), \
-                                 utils.colorize(event[1], "cyan"), \
-                                 event[2])
-                        break # We are done, found already a matching artist
+                    print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
+                            (artist["artist"],                        \
+                             artist["playcount"]),                    \
+                            "yellow")
+                    print u"[%s] %s, %s\n%s\n" % \
+                            (utils.colorize(event[0], "bold"), \
+                             utils.colorize(event[1], "cyan"), \
+                             event[2], event[3])
+                    break # We are done, found already a matching artist
 
     elif sys.argv[1] == "purge":
         print "Purging past events..."
