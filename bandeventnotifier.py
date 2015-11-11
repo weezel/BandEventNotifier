@@ -32,7 +32,7 @@ class Fetcher(threading.Thread):
     def run(self):
         while True:
             venue = self.fetchqueue.get()
-            print "[-] Fetching and parsing '%s' venue" % (venue.name)
+            print "[+] Fetching and parsing '%s' venue" % (venue.name)
             venuehtml = self.__fetch(venue)
 
             venueparsed = list()
@@ -97,13 +97,13 @@ def main():
             print "fetch: [lastfm|venues]"
             usage()
         elif sys.argv[2] == "lastfm":
-            print "[-] Fetching LastFM user data."
+            print "[+] Fetching LastFM user data."
             lfmr = lastfmfetch.LastFmRetriever(dbeng)
             for artist in lfmr.nonAPIparser():
                 dbeng.insertLastFMartists(artist)
-            print "[+] LastFM data fetched."
+            print "[=] LastFM data fetched."
         elif sys.argv[2] == "venues":
-            print "[-] Fetching venues data."
+            print "[+] Fetching venues data."
             fetchqueue = Queue()
             venues = load_venue_plugins()
             for v in range(MAX_THREADS):
@@ -113,11 +113,11 @@ def main():
             for venue in venues:
                 fetchqueue.put(venue)
             fetchqueue.join()
-            print "[+] Venues data fetched."
+            print "[=] Venues data fetched."
 
-            print "[-] Inserting into a database..."
+            print "[+] Inserting into a database..."
             insert2db(dbeng)
-            print "[+] Venues added into the database."
+            print "[=] Venues added into the database."
         else:
             usage()
     elif sys.argv[1] == "gigs":
