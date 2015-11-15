@@ -66,7 +66,7 @@ class Yotalo(object):
         if int(month) < int(month_now):
             year += 1
 
-        return unicode("%s-%s-%s" % (year, month, day))
+        return unicode("%s-%.2d-%.2d" % (year, int(month), int(day)))
 
     def parseEvent(self, tag):
         date = u""
