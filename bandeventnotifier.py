@@ -7,6 +7,7 @@ import pickle
 import requests
 import sys
 import threading
+import time
 from Queue import Queue
 
 import dbengine
@@ -121,6 +122,7 @@ def main():
         else:
             usage()
     elif sys.argv[1] == "gigs":
+        today = time.strftime("%Y-%m-%d")
         print utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline")
 
         for event in dbeng.getAllGigs():
@@ -143,9 +145,12 @@ def main():
                             (artist["artist"],                        \
                              artist["playcount"]),                    \
                             "yellow")
+                    if event[0] == today:
+                        gigdate = utils.colorize(event[0], "green")
+                    else:
+                        gigdate = utils.colorize(event[0], "bold")
                     print u"[%s] %s, %s\n%s\n" % \
-                            (utils.colorize(event[0], "bold"), \
-                             utils.colorize(event[1], "cyan"), \
+                            (gigdate, utils.colorize(event[1], "cyan"), \
                              event[2], event[3])
                     break # We are done, found already a matching artist
 
