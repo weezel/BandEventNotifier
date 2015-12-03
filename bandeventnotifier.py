@@ -65,7 +65,7 @@ class Fetcher(threading.Thread):
 
                 if r.status_code is 200:
                     break
-        return r.text
+        return r.content
 
 def insert2db(dbeng):
     # Create needed venue entries to database.
