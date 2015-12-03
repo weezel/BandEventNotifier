@@ -95,7 +95,7 @@ if __name__ == '__main__':
     p = Pakkahuone()
     r = requests.get(p.url)
 
-    for e in p.parseEvents(r.text):
+    for e in p.parseEvents(r.content):
         for k, v in e.iteritems():
             print "%-10s: %s" % (k, v)
         print

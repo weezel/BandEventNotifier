@@ -103,7 +103,7 @@ if __name__ == '__main__':
     k = Nosturi()
     r = requests.get(k.url)
 
-    for e in k.parseEvents(r.text):
+    for e in k.parseEvents(r.content):
         for k, v in e.iteritems():
             print "%-10s: %s" % (k, v)
         print

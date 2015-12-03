@@ -101,7 +101,7 @@ if __name__ == '__main__':
     #with open("venues/vastavirta.html") as f:
     #    r = f.read()
 
-    for event in v.parseEvents(r.text):
+    for event in v.parseEvents(r.content):
         for k, v in event.iteritems():
             print "%-10s: %s" % (k, v)
         print

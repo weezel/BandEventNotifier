@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     d = Dogshome()
     r = requests.get(d.url)
-    daa = d.parseEvents(r.text)
+    daa = d.parseEvents(r.content)
 
     for i in daa:
         for k, v in i.iteritems():

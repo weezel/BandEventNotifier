@@ -101,7 +101,7 @@ if __name__ == '__main__':
     d = Yotalo()
     r = requests.get(d.url)
 
-    for i in d.parseEvents(r.text):
+    for i in d.parseEvents(r.content):
         print "Keys = %s" % i.keys()
         print "Data = %s" % i
         print
