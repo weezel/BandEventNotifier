@@ -9,7 +9,7 @@ import time
 
 class PluginParseError(Exception): pass
 
-class OHaras(object):
+class Oharas(object):
     def __init__(self):
         self.url = "http://www.gastropub.net/oharas/esiintyjat.php"
         self.name = "O'Hara's"
@@ -88,7 +88,7 @@ class OHaras(object):
 if __name__ == '__main__':
     import requests
 
-    k = OHaras()
+    k = Oharas()
     r = requests.get(k.url)
 
     for e in k.parseEvents(r.content):
