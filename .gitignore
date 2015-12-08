@@ -1,4 +1,4 @@
-APIKEYS
+USERNAME
 *.dump
 *.pyc
 *.db

@@ -25,13 +25,10 @@ should be sufficient, for now.
 - Requests
 - Sqlite3
 - Lxml
-- Pylast (optional)
-	- API key for Last.fm (This isn't needed anymore. Will do the code
-	  adjusments in the near future)
 
 
 ## Setup
-Create `APIKEYS` file under the repository and fill it in the following way:
+Create `USERNAME` file under the repository and fill it in the following way:
 
 	lastfm username
 	lastfm password
