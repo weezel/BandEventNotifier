@@ -30,14 +30,7 @@ should be sufficient, for now.
 ## Setup
 Create `USERNAME` file under the repository and fill it in the following way:
 
-	lastfm username
-	lastfm password
-	lastfm API key
-	lastfm API secret
-
-or alternatively just a username:
-
-	my-lastfm-name
+	MY-LASTFM-USERNAME-HERE
 
 Database won't get created automatically, yet, and therefore must be created
 manually:
