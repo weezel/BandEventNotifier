@@ -36,7 +36,7 @@ class Klubi(object):
                  u"country" : self.country }
 
     def parsePrice(self, line):
-        return u"0" if line == "-" else u"%s€" % line
+        return u"0" if "-" in line else u"%s€" % line
 
     def parseDate(self, tag):
         date = re.search(self.datepat, tag)
