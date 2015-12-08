@@ -146,7 +146,7 @@ def main():
                              artist["playcount"]),                    \
                             "yellow")
                     if event[0] == today:
-                        gigdate = utils.colorize(event[0], "green")
+                        gigdate = utils.colorize(event[0], "red")
                     else:
                         gigdate = utils.colorize(event[0], "bold")
                     print u"[%s] %s, %s\n%s\n" % \
