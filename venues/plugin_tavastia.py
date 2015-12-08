@@ -40,7 +40,7 @@ class Tavastia(object):
         prices = re.findall(self.monetarypattern, line)
         if len(prices) < 1:
             return u"0"
-        prices = map(lambda x: x.replace(" ", ""), prices)
+        prices = map(lambda x: x.replace(" ", "").replace(",", "."), prices)
 
         return "/".join(prices)
 
