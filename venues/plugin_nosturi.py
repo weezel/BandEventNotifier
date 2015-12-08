@@ -85,12 +85,6 @@ class Nosturi(object):
                  u"name" : name,                 \
                  u"price" : price }
 
-        #for node in tag.xpath('./div[@class="event-content"]'):
-            #return { u"venue" : self.getVenueName(),  \
-            #         u"date" : date,                   \
-            #         u"name" : "%s%s %s" % (title, artist, desc), \
-            #         u"price" : price }
-
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
 
