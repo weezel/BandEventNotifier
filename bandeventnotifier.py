@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import datetime
 import glob
 import os
 import pickle
@@ -122,7 +123,7 @@ def main():
         else:
             usage()
     elif sys.argv[1] == "gigs":
-        today = time.strftime("%Y-%m-%d")
+        weektimespan = datetime.datetime.now() + datetime.timedelta(days=7)
         print utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline")
 
         for event in dbeng.getAllGigs():
@@ -145,7 +146,8 @@ def main():
                             (artist["artist"],                        \
                              artist["playcount"]),                    \
                             "yellow")
-                    if event[0] == today:
+                    if datetime.datetime.strptime(event[0], "%Y-%m-%d") <= \
+                                                  weektimespan:
                         gigdate = utils.colorize(event[0], "red")
                     else:
                         gigdate = utils.colorize(event[0], "bold")
