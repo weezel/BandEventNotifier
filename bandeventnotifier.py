@@ -141,6 +141,12 @@ def main():
                     if " ".join(artistname) in eventartists:
                         printEvent = True
 
+                # XXX Testing this feature.
+                # Don't show artists that have been listened only once (miss
+                # shots likely).
+                if artist["playcount"] <= 1:
+                    printEvent = False
+
                 if printEvent:
                     print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
                             (artist["artist"],                        \
