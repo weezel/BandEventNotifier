@@ -62,7 +62,7 @@ class Fetcher(threading.Thread):
             for retry in range(0, retries):
                 print "Couldn't connect %s, retrying %d/%d..." % \
                         (venue.url, retry + 1, retries)
-                r = requests.get(venue.url)
+                r = requests.get(venue.url, timeout=5)
 
                 if r.status_code is 200:
                     break
