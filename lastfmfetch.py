@@ -49,7 +49,7 @@ class LastFmRetriever(object):
         libraryurl = "http://www.last.fm/user/%s/library/artists?page=1" % \
                      (self.__username)
         html = requests.get(libraryurl)
-        site = lxml.html.fromstring(html.text).getroottree().getroot()
+        site = lxml.html.fromstring(html.content)
 
         pagestag = site.xpath('//ul[@class="pagination"]' \
                               +'/li[@class="pages"]/text()')
@@ -65,12 +65,17 @@ class LastFmRetriever(object):
                 artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
                 artist = " ".join(artist)
 
+                # Bail early, no need to parse further.
+                # Since we use fairly eager matching, LastFM's newest changes
+                # hit in this rule too.
+                # The mismatch is cause by "Listening History" charts.
+                if artist == "":
+                    continue
+
                 playcount = libitem.xpath('./td[@class="chartlist-countbar"]' \
                                         + '/span/span/a/text()')
                 playcount = " ".join(playcount)
                 pcount = re.search(p, playcount)
-                if pcount == None:
-                    raise PlaycountParseError
                 pcount = pcount.group().replace(",", "")
 
                 yield {u"name" : artist, \
