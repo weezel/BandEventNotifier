@@ -92,6 +92,8 @@ if __name__ == '__main__':
     allbands = list()
     lfmr = LastFmRetriever()
 
-    for i in lfmr.nonAPIparser():
-        print "%s" % (i)
+    for item in lfmr.nonAPIparser():
+        pcount = int(item["playcount"])
+        name = item["name"]
+        print "[%5d] %-6s" % (pcount, name)
 
