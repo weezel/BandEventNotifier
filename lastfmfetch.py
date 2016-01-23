@@ -68,7 +68,7 @@ class LastFmRetriever(object):
                 # Bail early, no need to parse further.
                 # Since we use fairly eager matching, LastFM's newest changes
                 # hit in this rule too.
-                # The mismatch is cause by "Listening History" charts.
+                # The mismatch is caused by "Listening History" charts.
                 if artist == "":
                     continue
 
