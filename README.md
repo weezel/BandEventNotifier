@@ -13,8 +13,7 @@ events.
 Same applies for Facebook and other sites.
 Instead of parsing all the interesting artist sites, I though it would be best
 to parse venue programmes only.
-I visit cities and countries to see bands, therefore parsing venue sites only
-should be sufficient, for now.
+Works for me (TM).
 
 ## Screenshot
 ![BandEventNotifier](ben.png)
