@@ -13,7 +13,7 @@ class Lutakko(object):
     def __init__(self):
         self.url = "http://www.jelmu.net/"
         self.name = "Lutakko"
-        self.city = "Jyväskylä"
+        self.city = u"Jyväskylä"
         self.country = "Finland"
 
         # Parsing patterns
@@ -68,7 +68,7 @@ class Lutakko(object):
         if int(month) < int(month_now):
             year += 1
 
-        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+        return u"%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvent(self, tag):
         date = u""
