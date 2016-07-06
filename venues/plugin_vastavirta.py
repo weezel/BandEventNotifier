@@ -14,18 +14,18 @@ class Vastavirta(object):
         self.country = "Finland"
         self.parseddata = None
         self.monthmap = {   \
-                "Tam" : 1,  \
-                "Hel" : 2,  \
-                "Maa" : 3,  \
-                "Huh" : 4,  \
-                "Tou" : 5,  \
-                "Kes" : 6,  \
-                "Hei" : 7,  \
-                "Elo" : 8,  \
-                "Syy" : 9,  \
-                "Lok" : 10, \
-                "Mar" : 11, \
-                "Jou" : 12 }
+                u"Tammi" : 1,  \
+                u"Helmi" : 2,  \
+                u"Maalis" : 3,  \
+                u"Huhti" : 4,  \
+                u"Touko" : 5,  \
+                u"Kesä" : 6,  \
+                u"Heinä" : 7,  \
+                u"Elo" : 8,  \
+                u"Syys" : 9,  \
+                u"Loka" : 10, \
+                u"Marras" : 11, \
+                u"Jou" : 12 }
 
     def getVenueName(self):
         return self.name
@@ -56,7 +56,7 @@ class Vastavirta(object):
         year = tag.xpath('./*/div[@class="start-date"]/div[@class="event-year"]/text()')
 
         day = " ".join(day)
-        month = " ".join(m)
+        month = " ".join(m).capitalize()
         year = " ".join(year)
 
         if day is "" or month is "" or year is "":
