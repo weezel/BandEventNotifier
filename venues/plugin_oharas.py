@@ -11,7 +11,7 @@ class PluginParseError(Exception): pass
 
 class Oharas(object):
     def __init__(self):
-        self.url = "http://www.gastropub.net/oharas/esiintyjat.php"
+        self.url = "https://www.gastropub.net/oharas/keikkakalenteri/"
         self.name = "O'Hara's"
         self.city = "Tampere"
         self.country = "Finland"
@@ -79,11 +79,12 @@ class Oharas(object):
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
-        eventtags = doc.xpath('//div[@id="fefefef"]/p')
+        eventtags = doc.xpath('//section[@id="main-content"]/p')
 
         for et in eventtags:
-            if re.search(self.datepat, et.text_content()):
-                yield self.parseEvent(et)
+            if et.text_content() == u'\xa0': # We've reached the last event
+                return
+            yield self.parseEvent(et)
 
 if __name__ == '__main__':
     import requests
@@ -91,6 +92,10 @@ if __name__ == '__main__':
     k = Oharas()
     r = requests.get(k.url)
 
+    #with open("venues/oharas.html") as f:
+    #    r = f.read()
+
+    #for e in k.parseEvents(r):
     for e in k.parseEvents(r.content):
         for k, v in e.iteritems():
             print "%-10s: %s" % (k, v)
