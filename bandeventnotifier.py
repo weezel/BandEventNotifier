@@ -56,12 +56,14 @@ class Fetcher(threading.Thread):
 
     def __fetch(self, venue):
         retries = 3
+        sleeptimesec = 5.0
         r = requests.get(venue.url)
 
         if r.status_code is not 200:
             for retry in range(0, retries):
-                print "Couldn't connect %s, retrying %d/%d..." % \
-                        (venue.url, retry + 1, retries)
+                print "Couldn't connect %s, retrying in %d seconds [%d/%d]..." % \
+                        (venue.url, sleeptimesec, retry + 1, retries)
+                time.sleep(sleeptimesec)
                 r = requests.get(venue.url, timeout=5)
 
                 if r.status_code is 200:
