@@ -6,6 +6,7 @@ import glob
 import os
 import pickle
 import requests
+import signal
 import sys
 import threading
 import time
@@ -18,6 +19,9 @@ import utils
 
 MAX_THREADS = 6
 
+def signal_handler(signal, frame):
+    print "Aborting..."
+    sys.exit(1)
 
 class Fetcher(threading.Thread):
     def __init__(self, q, dbobj=None):
@@ -37,15 +41,19 @@ class Fetcher(threading.Thread):
             print "[+] Fetching and parsing '%s' venue" % (venue.name)
             venuehtml = self.__fetch(venue)
 
+            if venuehtml == None:
+                self.fetchqueue.task_done()
+
             venueparsed = list()
             try:
                 for i in venue.parseEvents(venuehtml):
                     venueparsed.append(i)
             except TypeError, te:
-                print "%s Error while parsing %s plugin" % \
+                print "%s Error while parsing %s venue" % \
                         (utils.colorize("/_!_\\", "red"),    \
                          venue.getVenueName())
                 self.fetchqueue.task_done()
+                return
 
             # XXX Pickle hack to dodge SQLite concurrency problems.
             venue.parseddata = venueparsed
@@ -59,7 +67,10 @@ class Fetcher(threading.Thread):
         sleeptimesec = 5.0
         r = requests.get(venue.url)
 
-        if r.status_code is not 200:
+        if r.status_code == 404:
+            print "%s is broken, pleas fix it." % (venue.url)
+            return None
+        elif r.status_code != 200:
             for retry in range(0, retries):
                 print "Couldn't connect %s, retrying in %d seconds [%d/%d]..." % \
                         (venue.url, sleeptimesec, retry + 1, retries)
@@ -173,5 +184,7 @@ def main():
     dbeng.close()
 
 if __name__ == '__main__':
+    # Allow CTRL+C termination
+    signal.signal(signal.SIGINT, signal_handler)
     main()
 
