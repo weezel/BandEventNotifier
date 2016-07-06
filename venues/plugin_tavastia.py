@@ -9,15 +9,14 @@ class PluginParseError(Exception): pass
 
 class Tavastia(object):
     def __init__(self):
-        self.url = "http://www.tavastiaklubi.fi/tapahtumat"
+        self.url = "http://www.tavastiaklubi.fi"
         self.name = "Tavastia"
         self.city = "Helsinki"
         self.country = "Finland"
         self.parseddata = None
 
         # Parsing patterns
-        self.datepat = re.compile("\d+\.\d+.")
-        self.monetarypattern = re.compile(u"[0-9.,]+ ?€")
+        self.datepat = re.compile("\d+\.\d+.\d+")
 
     def getVenueName(self):
         return self.name
@@ -36,61 +35,49 @@ class Tavastia(object):
                  u"city" : self.city, \
                  u"country" : self.country }
 
-    def parsePrice(self, line):
-        prices = re.findall(self.monetarypattern, line)
-        if len(prices) < 1:
-            return u"0"
-        prices = map(lambda x: x.replace(" ", "").replace(",", "."), prices)
+    def parsePrice(self, tag):
+        price = tag.xpath('./a[@class="event-details-col"]/' + \
+                          'p[@class="event-details"]' +        \
+                          '/span[@class="event-priceinfo"]')
+        prices = map(lambda x: x.text_content(), price)
+        prices = [i for i in prices if i != ' ']
 
         return "/".join(prices)
 
     def parseDate(self, tag):
-        month_now = time.strftime("%m")
-        year = int(time.strftime("%Y"))
-        date = u""
         datetmp = u""
 
-        if len(tag) == 0:
+        if tag != None and len(tag) == 0:
             return u""
 
-        datetmp = tag.text_content()
-        parsedate = re.search(self.datepat, datetmp)
-        if parsedate:
-            date = parsedate.group()
-            day, month = date.rstrip(".").split(".")
+        datetmp = "".join(tag.xpath('./a[@class="event-date-col"]/span/text()'))
 
-            # Are we on the new year already?
-            if int(month) < int(month_now):
-                year += 1
-            return "%s-%.2d-%.2d" % (int(year), int(month), int(day))
-        return u""
+        day, month, year = datetmp.split(".")
+        return "%s-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvent(self, tag):
         date = u""
         event = u""
         price = u""
 
-        tmp = tag.xpath('.//td[@class="event-listing-td"]')
+        date = self.parseDate(tag)
+        event = tag.xpath('./a[@class="event-details-col"]/h2/text()')
+        event = " ".join(event).replace("\n", "")
+        event = re.sub("\s+", " ", event)
+        event = event.lstrip(" ").rstrip(" ")
 
-        if len(tmp) < 2:
-            raise PluginParseError("Error while parsing %s" % self.name)
-
-        date = self.parseDate(tmp[0])
-        event = tmp[1].text_content().replace("\n", " ").lstrip(" ").rstrip(" ")
-        event = unicode(re.sub("\s+", " ", event))
-
-        price = self.parsePrice(event)
+        price = self.parsePrice(tag)
 
         return { u"venue" : self.getVenueName(), \
                  u"date" : date,                 \
                  u"name" : event,                \
                  u"price" : price }
 
-
     def parseEvents(self, data):
         doc = html.fromstring(data)
 
-        for tag in doc.xpath('//div[starts-with(@class, "event-listing-")]'):
+        for tag in doc.xpath('//div[starts-with(@class, "event-content")]' + \
+                             '/*/div[@class="event-row"]'):
             yield self.parseEvent(tag)
 
 if __name__ == '__main__':
@@ -98,9 +85,8 @@ if __name__ == '__main__':
 
     d = Tavastia()
     r = requests.get(d.url)
-    daa = d.parseEvents(r.content)
 
-    for i in daa:
+    for i in d.parseEvents(r.content):
         for k, v in i.iteritems():
             print "%-10s: %s" % (k, v)
         print
