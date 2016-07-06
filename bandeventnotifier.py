@@ -83,7 +83,7 @@ class Fetcher(threading.Thread):
 
 def insert2db(dbeng):
     # Create needed venue entries to database.
-    # XXX Remove pickle handler once concurrency problems are fixed.
+    # XXX Remove pickle handler once the SQL concurrency problems are fixed.
 
     # And here we load the venues again, yes annoying. More memory/CPU
     # efficient implementation on it's way.
