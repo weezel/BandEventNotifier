@@ -42,6 +42,20 @@ Now, fetch some data and enjoy!
 
 or to get usage information, just run `./bandeventnotifier.py`.
 
+## Broken plugin
+Venus site layouts changes every now and then.
+That means broken plugin.
+One should sacrifice a few minutes to fix the issue but if you are in a hurry,
+do the following:
+	- Check the plugin's file name
+	- Add broken plugin's file name into `plugin_handler.py` file
+	- Variable is called `blacklisted`
+	- i.e. `blacklisted = ["plugin_venuename"]`
+	- Run the fetch again
+
+If you are not capable to fix the plugin by yourself, please contact the author
+of the plugin or me.
+
 # LICENSE
 Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
