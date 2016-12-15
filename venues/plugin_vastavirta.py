@@ -25,7 +25,7 @@ class Vastavirta(object):
                 u"Syys" : 9,  \
                 u"Loka" : 10, \
                 u"Marras" : 11, \
-                u"Jou" : 12 }
+                u"Joulu" : 12 }
 
     def getVenueName(self):
         return self.name
