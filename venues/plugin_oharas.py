@@ -82,9 +82,10 @@ class Oharas(object):
         eventtags = doc.xpath('//section[@id="main-content"]/p')
 
         for et in eventtags:
-            if et.text_content() == u'\xa0': # We've reached the last event
-                return
-            yield self.parseEvent(et)
+            parsed = self.parseEvent(et)
+            if len(parsed["date"]) == 0:
+                continue
+            yield parsed
 
 if __name__ == '__main__':
     import requests
