@@ -2,3 +2,11 @@ USERNAME
 *.dump
 *.pyc
 *.db
+# py-virtualenv related
+bin/
+include/
+lib/
+local/
+pysqlite2-doc/
+pip-selfcheck.json
+share/

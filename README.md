@@ -21,12 +21,18 @@ Works for me (TM).
 
 ## Dependencies
 - Python 2.7.x
-- Requests
-- Sqlite3
-- Lxml
-
+- (py-)virtualenv
+- pip
+- python-dev
+- (lib)sqlite3-dev
 
 ## Setup
+Activate virtualenv and install needed packages:
+	virtualenv BandEventNotifier
+	cd BandEventNotifier
+	. bin/activate
+	pip install -r < requirements.txt
+
 Create `USERNAME` file under the repository and fill it in the following way:
 
 	MY-LASTFM-USERNAME-HERE
