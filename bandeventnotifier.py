@@ -98,7 +98,7 @@ def insert2db(dbeng):
         os.remove(fname)
 
 def usage():
-    print "usage: bandeventnotifier.py [fetch[lastfm|venues]|gigs|purge]"
+    print "usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | purge]"
     sys.exit(1)
 
 def main():
