@@ -51,13 +51,11 @@ class LastFmRetriever(object):
         html = requests.get(libraryurl)
         site = lxml.html.fromstring(html.content)
 
-        pagestag = site.xpath('//ul[@class="pagination"]' \
-                              +'/li[@class="pages"]/text()')
-        pagescount = re.findall("[0-9,]+", " ".join(pagestag)) # [1, n]
-        if len(pagescount) == 0:
+        pagestag = site.xpath('//li[contains(@class, " pagination-page")]' + \
+                              '/a/text()')
+        pagescount = max(map(lambda i: int(i), pagestag))
+        if pagescount == "":
             pagescount = 1 # Otherwise loop would be skipped
-        else:
-            pagescount = int(pagescount[1])
 
         # Go through the all pages
         while pageidx <= pagescount:
@@ -73,7 +71,7 @@ class LastFmRetriever(object):
                     continue
 
                 playcount = libitem.xpath('./td[@class="chartlist-countbar"]' \
-                                        + '/span/span/a/text()')
+                                        + '/span/span/a/span/text()')
                 playcount = " ".join(playcount)
                 pcount = re.search(p, playcount)
                 pcount = pcount.group().replace(",", "")
