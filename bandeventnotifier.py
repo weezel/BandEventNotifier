@@ -41,7 +41,7 @@ class Fetcher(threading.Thread):
             print "[+] Fetching and parsing '%s' venue" % (venue.name)
             venuehtml = self.__fetch(venue)
 
-            if venuehtml == None:
+            if venuehtml == "":
                 self.fetchqueue.task_done()
 
             venueparsed = list()
@@ -65,11 +65,15 @@ class Fetcher(threading.Thread):
     def __fetch(self, venue):
         retries = 3
         sleeptimesec = 5.0
-        r = requests.get(venue.url)
+        try:
+            r = requests.get(venue.url)
+        except Exception, general_err:
+            print "ERROR: %s" % (general_err)
+            return ""
 
         if r.status_code == 404:
-            print "%s is broken, pleas fix it." % (venue.url)
-            return None
+            print "%s is broken, please fix it." % (venue.url)
+            return ""
         elif r.status_code != 200:
             for retry in range(0, retries):
                 print "Couldn't connect %s, retrying in %d seconds [%d/%d]..." % \
