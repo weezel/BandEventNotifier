@@ -59,6 +59,8 @@ class LastFmRetriever(object):
 
         # Go through the all pages
         while pageidx <= pagescount:
+            print "Getting data from page %.3d / %.3d" % \
+                    (pageidx, pagescount)
             for libitem in site.xpath('//tbody/tr'):
                 artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
                 artist = " ".join(artist)
