@@ -31,24 +31,24 @@ class Tavastia(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, tag):
-        price = tag.xpath('./a[@class="event-details-col"]/' + \
+        prices = tag.xpath('./a[@class="event-details-col"]/' + \
                           'p[@class="event-details"]' +        \
                           '/span[@class="event-priceinfo"]')
-        prices = map(lambda x: x.text_content(), price)
-        prices = [i for i in prices if i != ' ']
+        prices = [i.text_content() for i in prices \
+                    if i.text_content() != ' ']
 
         return "/".join(prices)
 
     def parseDate(self, tag):
-        datetmp = u""
+        datetmp = ""
 
         if tag != None and len(tag) == 0:
-            return u""
+            return ""
 
         datetmp = "".join(tag.xpath('./a[@class="event-date-col"]/span/text()'))
 
@@ -56,9 +56,9 @@ class Tavastia(object):
         return "%s-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvent(self, tag):
-        date = u""
-        event = u""
-        price = u""
+        date = ""
+        event = ""
+        price = ""
 
         date = self.parseDate(tag)
         event = tag.xpath('./a[@class="event-details-col"]/h2/text()')
@@ -68,10 +68,10 @@ class Tavastia(object):
 
         price = self.parsePrice(tag)
 
-        return { u"venue" : self.getVenueName(), \
-                 u"date" : date,                 \
-                 u"name" : event,                \
-                 u"price" : price }
+        return { "venue" : self.getVenueName(), \
+                 "date" : date,                 \
+                 "name" : event,                \
+                 "price" : price }
 
     def parseEvents(self, data):
         doc = html.fromstring(data)
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     r = requests.get(d.url)
 
     for i in d.parseEvents(r.content):
-        for k, v in i.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in i.items():
+            print(f"{k:>10s}: {v}")
         print
 

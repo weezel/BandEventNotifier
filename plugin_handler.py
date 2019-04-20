@@ -15,7 +15,7 @@ def load_venue_plugins():
     Read plugin directory and load found plugins.
     Variable "blacklisted" can be used to exclude loading certain plugins.
     """
-    blacklisted = ["plugin_tiketti"]
+    blacklisted = ["plugin_tiketti", "plugin_ontherocks"]
     foundblacklisted = list()
     loadedplugins = list()
     pluginspathabs = os.path.join(os.path.dirname(__file__), "venues")
@@ -36,8 +36,8 @@ def load_venue_plugins():
 
         instance = loadedclass()
         loadedplugins.append(instance)
-        print "Loaded plugin: %s" % instance.getVenueName()
-    print "Blacklisted plugins: %s.\n" % (", ".join(foundblacklisted[1:]))
+        print(f"Loaded plugin: {instance.getVenueName()}")
+    print("Blacklisted plugins: {}.\n".format(", ".join(foundblacklisted[1:])))
     return  loadedplugins
 
 if __name__ == '__main__':

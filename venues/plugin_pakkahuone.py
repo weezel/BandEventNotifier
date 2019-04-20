@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -31,17 +31,17 @@ class Pakkahuone(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, line):
-        return u"0" if line == "-" else u"%s€" % line
+        return "0" if line == "-" else "%s€" % line
 
     def parseDate(self, tag):
         date = re.search(self.datepat, tag)
         if date == None:
-            return u""
+            return ""
 
         day, month, year = date.group().split(".")
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
@@ -54,10 +54,10 @@ class Pakkahuone(object):
         <div>  Time/doors
         """
 
-        date = u""
-        title = u""
-        artist = u""
-        desc = u""
+        date = ""
+        title = ""
+        artist = ""
+        desc = ""
 
         datedata = " ".join(tag.xpath('./span[@class="date "]/text()'))
         date = self.parseDate(datedata)
@@ -76,10 +76,10 @@ class Pakkahuone(object):
                     " ".join(node.xpath('./div[@class="info"]' \
                                + '/span[@class="price"]/text()')))
 
-            return { u"venue" : self.getVenueName(),  \
-                    u"date" : date,                   \
-                    u"name" : "%s%s %s" % (title, artist, desc), \
-                    u"price" : price }
+            return { "venue" : self.getVenueName(),  \
+                    "date" : date,                   \
+                    "name" : "%s%s %s" % (title, artist, desc), \
+                    "price" : price }
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     r = requests.get(p.url)
 
     for e in p.parseEvents(r.content):
-        for k, v in e.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 

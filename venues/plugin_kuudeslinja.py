@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -32,13 +32,13 @@ class Kuudeslinja(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, tag):
         # TODO Lacking implementation
-        return u"0"
+        return "0"
 
     def parseDate(self, tag):
         month_now = time.strftime("%m")
@@ -49,7 +49,7 @@ class Kuudeslinja(object):
         d = d.split(" ")
 
         if len(d) != 2:
-            return u""
+            return ""
 
         day, month = d[1].rstrip(".").split(".")
         # Are we on the new year already?
@@ -59,19 +59,19 @@ class Kuudeslinja(object):
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvent(self, tag):
-        date = u""
-        title = u""
-        event = u""
-        price = u""
+        date = ""
+        title = ""
+        event = ""
+        price = ""
 
         date = self.parseDate(tag.xpath('./span[@class="pvm"]/text()'))
         event = " ".join(tag.xpath('./span[@class="title"]/text()'))
-        event = unicode(event)
+        event = event
 
-        return { u"venue" : self.getVenueName(), \
-                 u"date" : date,                 \
-                 u"name" : event,                \
-                 u"price" : price }
+        return { "venue" : self.getVenueName(), \
+                 "date" : date,                 \
+                 "name" : event,                \
+                 "price" : price }
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     r = requests.get(k.url)
 
     for e in k.parseEvents(r.content):
-        for k, v in e.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 

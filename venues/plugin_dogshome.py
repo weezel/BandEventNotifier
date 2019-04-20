@@ -17,7 +17,7 @@ class Dogshome(object):
 
         # Parsing patterns
         self.datestartpat = re.compile("^\d+\.\d+. ")
-        self.monetarypattern = re.compile(u"[0-9.,]+€")
+        self.monetarypattern = re.compile("[0-9.,]+€")
 
     def getVenueName(self):
         return self.name
@@ -32,14 +32,14 @@ class Dogshome(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, line):
         prices = re.findall(self.monetarypattern, line)
         if len(prices) < 1:
-            return u"0"
+            return "0"
 
         return "/".join(prices)
 
@@ -56,14 +56,14 @@ class Dogshome(object):
             date = "%s-%.2d-%.2d" % (int(year), int(month), int(day))
         else:
             date = ""
-        return unicode(date)
+        return date
 
     def parseEvent(self, line):
         dateends = line.find(" ") + 1
 
         if dateends > 0:
-            return unicode(line[dateends :])
-        return unicode("")
+            return line[dateends :]
+        return ""
 
     def parseEvents(self, data):
         # XXX Double line event entries will likely fail
@@ -76,10 +76,10 @@ class Dogshome(object):
                line.attrib['style'] == "text-align: center;":
                    if re.search(eventpattern, line.text_content()):
                        eventastext = line.text_content()
-                       yield { u"venue" : self.getVenueName(),         \
-                               u"date" : self.parseDate(eventastext),  \
-                               u"name" : self.parseEvent(eventastext), \
-                               u"price" : self.parsePrice(eventastext) }
+                       yield { "venue" : self.getVenueName(),         \
+                               "date" : self.parseDate(eventastext),  \
+                               "name" : self.parseEvent(eventastext), \
+                               "price" : self.parsePrice(eventastext) }
 
 if __name__ == '__main__':
     import requests
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     daa = d.parseEvents(r.content)
 
     for i in daa:
-        for k, v in i.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in i.items():
+            print(f"{k:>10s}: {v}")
         print
 

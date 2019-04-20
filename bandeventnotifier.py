@@ -1,5 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+#activate_this = '/home/weezel/apps/temperatures/bin/activate_this.py'
+#execfile(activate_this, dict(__file__=activate_this))
 
 import datetime
 import glob
@@ -10,7 +13,7 @@ import signal
 import sys
 import threading
 import time
-from Queue import Queue
+from queue import Queue
 
 import dbengine
 from plugin_handler import load_venue_plugins
@@ -20,7 +23,7 @@ import utils
 MAX_THREADS = 6
 
 def signal_handler(signal, frame):
-    print "Aborting..."
+    print("Aborting...")
     sys.exit(1)
 
 class Fetcher(threading.Thread):
@@ -38,7 +41,7 @@ class Fetcher(threading.Thread):
     def run(self):
         while True:
             venue = self.fetchqueue.get()
-            print "[+] Fetching and parsing '%s' venue" % (venue.name)
+            print(f"[+] Fetching and parsing venue '{venue.name}'")
             venuehtml = self.__fetch(venue)
 
             if venuehtml == "":
@@ -48,10 +51,10 @@ class Fetcher(threading.Thread):
             try:
                 for i in venue.parseEvents(venuehtml):
                     venueparsed.append(i)
-            except TypeError, te:
-                print "%s Error while parsing %s venue" % \
+            except TypeError as te:
+                print("{} Error while parsing {} venue".format( \
                         (utils.colorize("/_!_\\", "red"),    \
-                         venue.getVenueName())
+                         venue.getVenueName())))
                 self.fetchqueue.task_done()
                 return
 
@@ -67,17 +70,18 @@ class Fetcher(threading.Thread):
         sleeptimesec = 5.0
         try:
             r = requests.get(venue.url)
-        except Exception, general_err:
-            print "ERROR: %s" % (general_err)
+        except Exception as general_err:
+            print(f"ERROR: {general_err}")
             return ""
 
         if r.status_code == 404:
-            print "%s is broken, please fix it." % (venue.url)
+            print(f"{venue.url} is broken, please fix it.")
             return ""
         elif r.status_code != 200:
             for retry in range(0, retries):
-                print "Couldn't connect %s, retrying in %d seconds [%d/%d]..." % \
-                        (venue.url, sleeptimesec, retry + 1, retries)
+                print(f"Couldn't connect {venue.url}, ", end="")
+                print("retrying in {:2d} seconds [{:2d}/{:2d}]..." % \
+                      venue.url, sleeptimesec, retry + 1, retries)
                 time.sleep(sleeptimesec)
                 r = requests.get(venue.url, timeout=5)
 
@@ -102,7 +106,7 @@ def insert2db(dbeng):
         os.remove(fname)
 
 def usage():
-    print "usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | purge]"
+    print("usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | purge]")
     sys.exit(1)
 
 def main():
@@ -113,16 +117,16 @@ def main():
         usage()
     elif sys.argv[1] == "fetch":
         if len(sys.argv) < 3:
-            print "fetch: [lastfm|venues]"
+            print("fetch: [lastfm|venues]")
             usage()
         elif sys.argv[2] == "lastfm":
-            print "[+] Fetching LastFM user data."
+            print("[+] Fetching LastFM user data.")
             lfmr = lastfmfetch.LastFmRetriever(dbeng)
             for artist in lfmr.nonAPIparser():
                 dbeng.insertLastFMartists(artist)
-            print "[=] LastFM data fetched."
+            print("[=] LastFM data fetched.")
         elif sys.argv[2] == "venues":
-            print "[+] Fetching venues data."
+            print("[+] Fetching venues data.")
             fetchqueue = Queue()
             venues = load_venue_plugins()
             for v in range(MAX_THREADS):
@@ -132,16 +136,16 @@ def main():
             for venue in venues:
                 fetchqueue.put(venue)
             fetchqueue.join()
-            print "[=] Venues data fetched."
+            print("[=] Venues data fetched.")
 
-            print "[+] Inserting into a database..."
+            print("[+] Inserting into a database...")
             insert2db(dbeng)
-            print "[=] Venues added into the database."
+            print("[=] Venues added into the database.")
         else:
             usage()
     elif sys.argv[1] == "gigs":
         weektimespan = datetime.datetime.now() + datetime.timedelta(days=7)
-        print utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline")
+        print(utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline"))
 
         for event in dbeng.getAllGigs():
             for artist in dbeng.getArtists():
@@ -165,22 +169,24 @@ def main():
                     printEvent = False
 
                 if printEvent:
-                    print utils.colorize("MATCH: %s, PLAYCOUNT: %d" % \
-                            (artist["artist"],                        \
-                             artist["playcount"]),                    \
-                            "yellow")
+                    print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format( \
+                          artist["artist"], \
+                          artist["playcount"]), \
+                          "yellow"))
                     if datetime.datetime.strptime(event[0], "%Y-%m-%d") <= \
                                                   weektimespan:
                         gigdate = utils.colorize(event[0], "red")
                     else:
                         gigdate = utils.colorize(event[0], "bold")
-                    print u"[%s] %s, %s\n%s\n" % \
-                            (gigdate, utils.colorize(event[1], "cyan"), \
-                             event[2], event[3])
+                    print("[{}] {}, {}".format( \
+                          gigdate, \
+                          utils.colorize(event[1], "cyan"), \
+                          event[2]))
+                    print("{}\n".format(event[3]))
                     break # We are done, found already a matching artist
 
     elif sys.argv[1] == "purge":
-        print "Purging past events..."
+        print("Purging past events...")
         dbeng.purgeOldEvents()
     else:
         usage()

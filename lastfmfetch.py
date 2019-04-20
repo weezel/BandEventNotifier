@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -18,7 +18,7 @@ class LastFmRetriever(object):
 
         self.__username = self.__readUsername(FNAME)
 
-    def __dbInit(self, db): # TODO Currently this isn't being utilized
+    def __dbInit(self, db):
         if db == None:
             self.db = db
 
@@ -36,8 +36,8 @@ class LastFmRetriever(object):
             return data[0]
 
     def calculatePopularity(self, allbands, thisband):
-        totalplaycount = sum([artist.playcount for artist in allbands])
-        return float(thisband.playcount) / totalplaycount * 1000
+        totalplaycount = sum([int(artist.playcount) for artist in allbands])
+        return thisband.playcount / totalplaycount * 1000.0
 
     def nonAPIparser(self):
         """
@@ -46,21 +46,20 @@ class LastFmRetriever(object):
         """
         pageidx = 1
         p = re.compile("[0-9,]+")
-        libraryurl = "http://www.last.fm/user/%s/library/artists?page=1" % \
-                     (self.__username)
+        libraryurl = "http://www.last.fm/user/{}/library/artists?page=1" \
+                        .format(self.__username)
         html = requests.get(libraryurl)
         site = lxml.html.fromstring(html.content)
 
         pagestag = site.xpath('//li[contains(@class, " pagination-page")]' + \
                               '/a/text()')
-        pagescount = max(map(lambda i: int(i), pagestag))
+        pagescount = max([int(i) for i in pagestag])
         if pagescount == "":
             pagescount = 1 # Otherwise loop would be skipped
 
         # Go through the all pages
         while pageidx <= pagescount:
-            print "Getting data from page %.3d / %.3d" % \
-                    (pageidx, pagescount)
+            print(f"Getting data from page {pageidx:3d} / {pagescount:3d}")
             for libitem in site.xpath('//tbody/tr'):
                 artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
                 artist = " ".join(artist)
@@ -78,8 +77,8 @@ class LastFmRetriever(object):
                 pcount = re.search(p, playcount)
                 pcount = pcount.group().replace(",", "")
 
-                yield {u"name" : artist, \
-                       u"playcount" : pcount}
+                yield {"name" : artist, \
+                       "playcount" : pcount}
 
             # Fetch the next page
             pageidx += 1
@@ -95,5 +94,5 @@ if __name__ == '__main__':
     for item in lfmr.nonAPIparser():
         pcount = int(item["playcount"])
         name = item["name"]
-        print "[%5d] %-6s" % (pcount, name)
+        print(f"[{pcount:5d}] {name:-6s}")
 

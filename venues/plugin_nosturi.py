@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -31,13 +31,13 @@ class Nosturi(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, line):
         if not line:
-            return u"0"
+            return "0"
         line = line[0]
         price = line.replace("\n", "")
         price = re.sub("\s+", "", price)
@@ -45,7 +45,7 @@ class Nosturi(object):
 
     def parseDate(self, tag):
         if tag is None:
-            return u""
+            return ""
 
         d = tag[0].text_content()
         datesplit = re.search(self.datepat, d)
@@ -53,7 +53,7 @@ class Nosturi(object):
         if datesplit:
             day, month, year = datesplit.group().split(".")
         else:
-            return u""
+            return ""
 
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
@@ -65,10 +65,10 @@ class Nosturi(object):
         <div>  Time/doors
         """
 
-        date = u""
-        title = u""
-        artists = u""
-        summary = u""
+        date = ""
+        title = ""
+        artists = ""
+        summary = ""
 
         date = self.parseDate(tag.xpath('.//span[@class="date-display-single"]'))
         title = " ".join(tag.xpath('.//div[@class="keikka_otsikko "]/a/text()'))
@@ -80,10 +80,10 @@ class Nosturi(object):
         name = name.replace('\n', '')
         name = re.sub("\s+", " ", name).lstrip(" ").rstrip(" ")
 
-        return { u"venue" : self.getVenueName(), \
-                 u"date" : date,                 \
-                 u"name" : name,                 \
-                 u"price" : price }
+        return { "venue" : self.getVenueName(), \
+                 "date" : date,                 \
+                 "name" : name,                 \
+                 "price" : price }
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     r = requests.get(k.url)
 
     for e in k.parseEvents(r.content):
-        for k, v in e.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 

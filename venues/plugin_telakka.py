@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -19,7 +19,7 @@ class Telakka(object):
         # Parsing patterns
         self.datepat = re.compile("(Ma|Ti|Ke|To|Pe|La|Su) [0-9]+.[0-9]+.")
         self.datepat2 = re.compile("[0-9]+.[0-9]+.")
-        self.monetary = re.compile(u"[0-9/]+[ ]?€")
+        self.monetary = re.compile("[0-9/]+[ ]?€")
 
     def getVenueName(self):
         return self.name
@@ -34,16 +34,16 @@ class Telakka(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, tag):
         # FIXME Cannot parse why this is not working yet.
         price = re.search(self.monetary, tag)
         if price:
             price = re.search("[0-9/]+", price.group)
-        return u"0" if not price else u"%s€" % price
+        return "0" if not price else "%s€" % price
 
     def parseDate(self, tag):
         month_now = int(time.strftime("%m"))
@@ -51,7 +51,7 @@ class Telakka(object):
 
         date = re.search(self.datepat2, tag)
         if date == None:
-            return u""
+            return ""
 
         day, month = date.group().rstrip(".").split(".")
 
@@ -62,21 +62,21 @@ class Telakka(object):
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvent(self, tag):
-        date = u""
-        price = u""
-        title = u""
+        date = ""
+        price = ""
+        title = ""
 
         date = self.parseDate(tag)
         title = tag.split(".", 2)
         if len(title) >= 3:
-            title = unicode(title[2])
+            title = title[2]
             title = re.sub("\s+", " ", title).lstrip(" ").rstrip(" ")
         price = self.parsePrice(title)
 
-        return { u"venue" : self.getVenueName(), \
-                 u"date" : date,                 \
-                 u"name" : "%s" % (title),       \
-                 u"price" : price }
+        return { "venue" : self.getVenueName(), \
+                 "date" : date,                 \
+                 "name" : "%s" % (title),       \
+                 "price" : price }
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     r = requests.get(p.url)
 
     for e in p.parseEvents(r.content):
-        for k, v in e.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 

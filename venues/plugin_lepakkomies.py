@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -34,22 +34,22 @@ class Lepakkomies(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, line):
         tmp = re.search(self.monetaryp, line)
         if tmp:
             price = tmp.group()
-        return u"0" if not tmp else u"%s€" % price
+        return "0" if not tmp else "%s€" % price
 
     def parseDate(self, tag):
         month_now = time.strftime("%m")
         year = int(time.strftime("%Y"))
 
         if len(tag) == 0:
-            return u""
+            return ""
 
         day, month = tag.rstrip(".").split(".")
         # Are we on the new year already?
@@ -59,9 +59,9 @@ class Lepakkomies(object):
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvent(self, tag):
-        date = u""
-        artist = u""
-        price = u""
+        date = ""
+        artist = ""
+        price = ""
 
         datedata = " ".join(tag.xpath('.//span[contains(@class, ' + \
                              '"event-date")]/span/text()'))
@@ -71,10 +71,10 @@ class Lepakkomies(object):
         price = " ".join(tag.xpath('.//span[contains(@class, ' + \
                 '"price")]/text()'))
 
-        return { u"venue" : self.getVenueName(),  \
-                 u"date" : date,                  \
-                 u"name" : "%s" % (artist),       \
-                 u"price" : self.parsePrice(price) }
+        return { "venue" : self.getVenueName(),  \
+                 "date" : date,                  \
+                 "name" : "%s" % (artist),       \
+                 "price" : self.parsePrice(price) }
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     r = requests.get(k.url)
 
     for e in k.parseEvents(r.content):
-        for k, v in e.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 

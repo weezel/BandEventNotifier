@@ -32,9 +32,9 @@ class Yotalo(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, line):
         # FIXME Regexp is broken, fit it at some point
@@ -44,8 +44,7 @@ class Yotalo(object):
         #   12 EUROA
         #   12 Euroa
         prices = re.findall("[0-9.,]+([ ]) e(uroa)?", line, flags=re.IGNORECASE)
-        #print "PRICES: %s" % prices
-        return u"%s €" % "/".join(prices)
+        return "{} €".format("/".join(prices))
 
     def parseDate(self, line):
         year = int(time.strftime("%Y"))
@@ -66,27 +65,27 @@ class Yotalo(object):
         if int(month) < int(month_now):
             year += 1
 
-        return unicode("%s-%.2d-%.2d" % (year, int(month), int(day)))
+        return "{:4d}-{:2d}-{:2d}".format(year, int(month), int(day))
 
     def parseEvent(self, tag):
-        date = u""
-        title = u""
-        desc = u""
+        date = ""
+        title = ""
+        desc = ""
 
         date = self.parseDate(tag.xpath('./div[@class="item_left"]/text()'))
-        title = u" ".join(tag.xpath('./div[@class="item_center"]/h3/a/text()'))
+        title = " ".join(tag.xpath('./div[@class="item_center"]/h3/a/text()'))
         for a in tag.xpath('./div[@class="item_center"]/p'):
-            desc += u" " + u" ".join(a.xpath('./*/text()'))
+            desc += " " + " ".join(a.xpath('./*/text()'))
         desc = re.sub("\s+", " ", desc)
         desc = desc.lstrip(" ").rstrip(" ")
         name = "%s - %s" % (title, desc)
         name = re.sub("\s+", " ", name)
         price = self.parsePrice(name)
 
-        return { u"venue" : self.getVenueName(), \
-                 u"date" : date, \
-                 u"name" : name, \
-                 u"price" : price }
+        return { "venue" : self.getVenueName(), \
+                 "date" : date, \
+                 "name" : name, \
+                 "price" : price }
 
     def parseEvents(self, data):
         #doc = parse("venues/doggari.html").getroot()
@@ -98,11 +97,11 @@ class Yotalo(object):
 if __name__ == '__main__':
     import requests
 
-    d = Yotalo()
+    y = Yotalo()
     r = requests.get(d.url)
 
-    for i in d.parseEvents(r.content):
-        print "Keys = %s" % i.keys()
-        print "Data = %s" % i
+    for e in y.parseEvents(r.content):
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 

@@ -18,7 +18,7 @@ like to avoid, and would need a complete rewrite.
 If one implements an own plugin, it should implement a method called
 `parseEvents(data)`, which in example yields the following dict and keys:
 
-	Keys = [u'city', u'country', u'price', u'venue', u'date', u'event']
+	Keys = ['city', 'country', 'price', 'venue', 'date', 'event']
 	KEY         VALUE
 	-----------------
 	date      : 2015-12-12

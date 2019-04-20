@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -12,13 +12,13 @@ class PluginParseError(Exception): pass
 class Olympia(object):
     def __init__(self):
         self.url = "http://olympiakortteli.fi/keikat/"
-        self.name = u"Olympia-kortteli"
-        self.city = u"Tampere"
-        self.country = u"Finland"
+        self.name = "Olympia-kortteli"
+        self.city = "Tampere"
+        self.country = "Finland"
 
         # Parsing patterns
         self.datepat = re.compile("[0-9.]+")
-        self.monetary = re.compile(u"[0-9]+(\s+)?€")
+        self.monetary = re.compile("[0-9]+(\s+)?€")
 
     def getVenueName(self):
         return self.name
@@ -33,9 +33,9 @@ class Olympia(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, t):
         # XXX Fix this
@@ -47,7 +47,7 @@ class Olympia(object):
         #if foundprice is None:
         #    foundprice = ""
 
-        #return u"0" if len(foundprice) == 0 else "%s" % (foundprice[0])
+        #return "0" if len(foundprice) == 0 else "%s" % (foundprice[0])
 
     def parseDate(self, t):
         tag = t.xpath('./div[2]/text()')
@@ -62,7 +62,7 @@ class Olympia(object):
             return ""
 
         day, month, year = founddate.group().split(".")
-        return u"%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
@@ -76,10 +76,10 @@ class Olympia(object):
             date = self.parseDate(event)
             price = self.parsePrice(event)
 
-            yield { u"venue" : self.getVenueName(), \
-                    u"date" : date, \
-                    u"name" : name, \
-                    u"price" : price }
+            yield { "venue" : self.getVenueName(), \
+                    "date" : date, \
+                    "name" : name, \
+                    "price" : price }
 
 if __name__ == '__main__':
     import requests
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     r = requests.get(l.url)
 
     for e in l.parseEvents(r.content):
-        for k, v in e.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 

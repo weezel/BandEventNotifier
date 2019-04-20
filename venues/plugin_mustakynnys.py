@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lxml.html
@@ -13,12 +13,12 @@ class Mustakynnys(object):
     def __init__(self):
         self.url = "http://mustakynnys.com/"
         self.name = "Mustakynnys"
-        self.city = u"Jyväskylä"
+        self.city = "Jyväskylä"
         self.country = "Finland"
 
         # Parsing patterns
         self.datepat = re.compile("[0-9.]+")
-        self.monetary = re.compile(u"[0-9]+(\s+)?€")
+        self.monetary = re.compile("[0-9]+(\s+)?€")
 
     def getVenueName(self):
         return self.name
@@ -33,9 +33,9 @@ class Mustakynnys(object):
         """
         This method is used to ensure venue exists in venue SQL table.
         """
-        return { u"name" : self.name, \
-                 u"city" : self.city, \
-                 u"country" : self.country }
+        return { "name" : self.name, \
+                 "city" : self.city, \
+                 "country" : self.country }
 
     def parsePrice(self, t):
         # TODO Broken, fix it
@@ -43,12 +43,10 @@ class Mustakynnys(object):
 
         foundprice = re.search(self.monetary, " ".join(tag))
 
-        #print "TAG: %s" % tag
-
         if foundprice is None:
             foundprice = ""
 
-        return u"0" if len(foundprice) == 0 else u"%s" % foundprice.strip(" ")
+        return "0" if len(foundprice) == 0 else "%s" % foundprice.strip(" ")
 
     def parseDate(self, t):
         tag = t.xpath('./text()')
@@ -59,7 +57,7 @@ class Mustakynnys(object):
             return ""
 
         day, month, year = founddate.group().split(".")
-        return u"%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
@@ -76,11 +74,11 @@ class Mustakynnys(object):
 
                 name = re.sub("\s+", " ", name).replace("\n", "")
 
-                yield { u"venue" : self.getVenueName(), \
-                        u"date" : date,                 \
-                        u"name" : name,                 \
-                        u"price" : price }
-                name = u""
+                yield { "venue" : self.getVenueName(), \
+                        "date" : date,                 \
+                        "name" : name,                 \
+                        "price" : price }
+                name = ""
             elif event.get("class") == "keikka":
                 name += " ".join(event.xpath('./a/text()'))
 
@@ -91,7 +89,7 @@ if __name__ == '__main__':
     r = requests.get(l.url)
 
     for e in l.parseEvents(r.content):
-        for k, v in e.iteritems():
-            print "%-10s: %s" % (k, v)
+        for k, v in e.items():
+            print(f"{k:>10s}: {v}")
         print
 
