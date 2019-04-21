@@ -20,22 +20,21 @@ Works for me (TM).
 
 
 ## Dependencies
-- Python 2.7.x
-- (py-)virtualenv
-- pip
+- Python 3.x
+- venv
+- pip3
 - python-dev
-- (lib)sqlite3-dev
 
 ## Setup
-Activate virtualenv and install needed packages:
-	virtualenv BandEventNotifier
+Activate venv and install needed packages:
+	python3 -m venv BandEventNotifier
 	cd BandEventNotifier
 	. bin/activate
-	pip install -r < requirements.txt
+	pip3 install -r requirements.txt
 
-Create `USERNAME` file under the repository and fill it in the following way:
+Create `USERNAME` file under the repository and put our LastFM username in there:
 
-	MY-LASTFM-USERNAME-HERE
+	echo my-lastfm-username > USERNAME
 
 Database won't get created automatically, yet, and therefore must be created
 manually:
@@ -49,8 +48,8 @@ Now, fetch some data and enjoy!
 or to get usage information, just run `./bandeventnotifier.py`.
 
 ## Broken plugin
-Venus site layouts changes every now and then.
-That means broken plugin.
+Venues site layouts changes every now and then.
+That means a broken plugin.
 One should sacrifice a few minutes to fix the issue but if you are in a hurry,
 do the following:
 	- Check the plugin's file name
@@ -73,6 +72,8 @@ Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 - [ ] Be more verbose when fetching data
 
 - [ ] Improve (dev) documentation
+
+- [X] Port to Python3
 
 - [X] Better error handling for plugins
 

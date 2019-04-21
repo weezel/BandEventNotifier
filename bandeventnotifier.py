@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
+#!bin/python3
 # -*- coding: utf-8 -*-
-
-#activate_this = '/home/weezel/apps/temperatures/bin/activate_this.py'
-#execfile(activate_this, dict(__file__=activate_this))
 
 import datetime
 import glob
