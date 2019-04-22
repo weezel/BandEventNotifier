@@ -80,7 +80,7 @@ class Ontherocks(object):
         return { "venue" : self.getVenueName(),  \
                  "date" : date,                   \
                  "name" : "%s" % (artist), \
-                 "price" : f"{price} €" }
+                 "price" : f"{price}" }
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data)
