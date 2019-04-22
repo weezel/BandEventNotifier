@@ -173,8 +173,8 @@ def main():
                         printEvent = True
 
                 # XXX Testing this feature.
-                # Don't show artists that have been listened only once (miss
-                # shots likely).
+                # Don't show artists that have been listened only a few times
+                # (miss shots likely).
                 if artist["playcount"] < 9:
                     printEvent = False
 
