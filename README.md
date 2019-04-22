@@ -69,7 +69,9 @@ Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 - [ ] Sort plugins by Country/City/venuename
 
-- [ ] Improve (dev) documentation
+- [ ] Switch to SQL Alchemy
+
+- [X] Improve (dev) documentation
 
 - [X] Threaded fetcher for LastFM
 

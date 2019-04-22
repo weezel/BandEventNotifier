@@ -64,7 +64,7 @@ File name prefix should be `plugin_`, i.e. `plugin_klubi.py`.
 If for a reason or an another one must disable a plugin temporarily, it can be
 added to `blacklisted` list which in `plugin_handler.py` file.
 
-### Coding rules
+## Coding rules
 - Indent is four spaces.
 - Line width is maximum 80 chars
 - Please use the existing files as a reference.
