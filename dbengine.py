@@ -52,12 +52,9 @@ class DBEngine(object):
         self.cur.execute(q, venue)
         self.conn.commit()
 
-    def insertLastFMartists(self, artistdata):
-        cols = ", ".join(artistdata.keys())
-        placeholders = ":" + ", :".join(artistdata.keys())
-        q = "INSERT OR IGNORE INTO artist (%s) VALUES (%s);" \
-                % (cols, placeholders)
-        self.cur.execute(q, artistdata)
+    def insertLastFMartists(self, artist, playcount):
+        q = "INSERT OR REPLACE INTO artist (name, playcount) VALUES (?, ?);"
+        self.cur.execute(q, [artist, playcount])
         self.conn.commit()
 
     def getVenues(self):

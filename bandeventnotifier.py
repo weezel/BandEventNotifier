@@ -14,10 +14,10 @@ from queue import Queue
 
 import dbengine
 from plugin_handler import load_venue_plugins
-import lastfmfetch
+from lastfmfetch import LastFmRetriever
 import utils
 
-MAX_THREADS = 6
+MAX_THREADS = 20
 
 def signal_handler(signal, frame):
     print("Aborting...")
@@ -71,6 +71,7 @@ class Fetcher(threading.Thread):
             print(f"ERROR: {general_err}")
             return ""
 
+        # TODO Check r.ok
         if r.status_code == 404:
             print(f"{venue.url} is broken, please fix it.")
             return ""
@@ -118,9 +119,21 @@ def main():
             usage()
         elif sys.argv[2] == "lastfm":
             print("[+] Fetching LastFM user data.")
-            lfmr = lastfmfetch.LastFmRetriever(dbeng)
-            for artist in lfmr.nonAPIparser():
-                dbeng.insertLastFMartists(artist)
+            all_bands = dict()
+            lfmQueue = Queue()
+            lfmr = LastFmRetriever(lfmQueue, all_bands)
+            pages = lfmr.getPaginatedPages()
+
+            for v in range(MAX_THREADS):
+                t = LastFmRetriever(lfmQueue, all_bands)
+                t.setDaemon(True)
+                t.start()
+            for page in pages:
+                lfmQueue.put(page)
+            lfmQueue.join()
+
+            for artist, playcount in lfmr.getArtistsPlaycounts():
+                dbeng.insertLastFMartists(artist, playcount)
             print("[=] LastFM data fetched.")
         elif sys.argv[2] == "venues":
             print("[+] Fetching venues data.")

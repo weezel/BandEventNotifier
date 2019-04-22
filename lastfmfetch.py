@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import re
+import threading
+from queue import Queue
+
 import lxml.html
 import requests
 
-import re
 
 FNAME = "USERNAME"
 
 
 class LfmUserError(Exception): pass
 
-class LastFmRetriever(object):
-    def __init__(self, db=None):
-        self.__db = self.__dbInit(db)
-        self.__username = None
+class LastFmRetriever(threading.Thread):
+    def __init__(self, queue, all_bands):
+        threading.Thread.__init__(self)
+        self.__queue = queue
 
+        self.artists_playcounts = all_bands
         self.__username = self.__readUsername(FNAME)
-
-    def __dbInit(self, db):
-        if db == None:
-            self.db = db
+        self.url = "https://www.last.fm/user/{username}/library/artists?page={pagenumber}"
 
     def __readUsername(self, fname):
         """
@@ -37,62 +38,88 @@ class LastFmRetriever(object):
 
     def calculatePopularity(self, allbands, thisband):
         totalplaycount = sum([int(artist.playcount) for artist in allbands])
-        return thisband.playcount / totalplaycount * 1000.0
+        return thisband.playcount / totalplaycount * 100.0
 
-    def nonAPIparser(self):
+    def getPaginatedPages(self):
         """
-        New LastFM is broken in many ways. This method omits their API and
-        parses data directly from the website.
+        Returns a list of LastFM library pages. For example:
+        [http://www.last.fm/user/exampleUser/library/artists?page=1
+         http://www.last.fm/user/exampleUser/library/artists?page=2
+         http://www.last.fm/user/exampleUser/library/artists?page=3]
         """
         pageidx = 1
-        p = re.compile("[0-9,]+")
-        libraryurl = "http://www.last.fm/user/{}/library/artists?page=1" \
-                        .format(self.__username)
-        html = requests.get(libraryurl)
+        html = requests.get(self.url.format(username=self.__username, \
+                pagenumber=1))
         site = lxml.html.fromstring(html.content)
 
         pagestag = site.xpath('//li[contains(@class, " pagination-page")]' + \
                               '/a/text()')
-        pagescount = max([int(i) for i in pagestag])
-        if pagescount == "":
-            pagescount = 1 # Otherwise loop would be skipped
+        pagescount = max([int(i) for i in pagestag], key=lambda i: int(i))
+        return [self.url.format(username=self.__username, pagenumber=i) \
+                for i in range(1, pagescount + 1)]
 
-        # Go through the all pages
-        while pageidx <= pagescount:
-            print(f"Getting data from page {pageidx:3d} / {pagescount:3d}")
-            for libitem in site.xpath('//tbody/tr'):
-                artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
-                artist = " ".join(artist)
+    def __parsePage(self, html):
+        pat_numbers = re.compile("[0-9,]+")
 
-                # Bail early, no need to parse further.
-                # Since we use fairly eager matching, LastFM's newest changes
-                # hit in this rule too.
-                # The mismatch is caused by "Listening History" charts.
-                if artist == "":
-                    continue
+        site = lxml.html.fromstring(html)
 
-                playcount = libitem.xpath('./td[@class="chartlist-countbar"]' \
-                                        + '/span/span/a/span/text()')
-                playcount = " ".join(playcount)
-                pcount = re.search(p, playcount)
-                pcount = pcount.group().replace(",", "")
+        for libitem in site.xpath('//tbody/tr'):
+            artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
+            artist = " ".join(artist).strip()
 
-                yield {"name" : artist, \
-                       "playcount" : pcount}
+            # Bail early, no need to parse further.
+            # Since we use fairly eager matching, LastFM's newest changes
+            # hit in this rule too.
+            # The mismatch is caused by "Listening History" charts.
+            if artist == "":
+                continue
 
-            # Fetch the next page
-            pageidx += 1
-            libraryurl = "http://www.last.fm/user/%s/library/artists?page=%s" \
-                    % (self.__username, pageidx)
-            html = requests.get(libraryurl)
-            site = lxml.html.fromstring(html.text).getroottree().getroot()
+            parsed_playcount = libitem.xpath('./td[@class="chartlist-countbar"]' \
+                                    + '/span/span/a/span/text()')
+            parsed_playcount = " ".join(parsed_playcount)
+            playcount = re.search(pat_numbers, parsed_playcount)
+            playcount = playcount.group().replace(",", "")
+
+            self.artists_playcounts[artist] = int(playcount)
+
+    def getArtistsPlaycounts(self):
+        for k, v in self.artists_playcounts.items():
+            yield k, v
+
+    def __fetch(self, url):
+        print(f"Getting data from: {url}", end="\r")
+        reply = requests.get(url)
+        if not reply.ok:
+            print(f"Couldn't fetch data from URL: {url}")
+            return
+        print(f"Completed fetching on {url}")
+        return reply.content
+
+    def run(self):
+        while True:
+            url = self.__queue.get()
+            html = self.__fetch(url)
+            self.__parsePage(html)
+            self.__queue.task_done()
 
 if __name__ == '__main__':
-    allbands = list()
-    lfmr = LastFmRetriever()
+    lfmQueue = Queue()
+    all_bands = dict()
+    lfmr = LastFmRetriever(lfmQueue, all_bands)
 
-    for item in lfmr.nonAPIparser():
-        pcount = int(item["playcount"])
-        name = item["name"]
-        print(f"[{pcount:5d}] {name:-6s}")
+    pages = lfmr.getPaginatedPages()
+
+    for v in range(25):
+        t = LastFmRetriever(lfmQueue, all_bands)
+        t.setDaemon(True)
+        t.start()
+    for page in pages:
+        lfmQueue.put(page)
+    lfmQueue.join()
+
+    print("# [Rank] Playcount: Artist")
+    for i, kv in enumerate(sorted(lfmr.getArtistsPlaycounts(),
+                                  key=lambda x: x[1],
+                                  reverse=True)):
+        print(f"[{i:>6d}] {kv[1]:>6d}: {kv[0]}")
 
