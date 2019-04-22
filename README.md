@@ -69,9 +69,9 @@ Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 - [ ] Sort plugins by Country/City/venuename
 
-- [ ] Be more verbose when fetching data
-
 - [ ] Improve (dev) documentation
+
+- [X] Threaded fetcher for LastFM
 
 - [X] Port to Python3
 
