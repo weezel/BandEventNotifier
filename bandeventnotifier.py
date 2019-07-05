@@ -18,6 +18,7 @@ from lastfmfetch import LastFmRetriever
 import utils
 
 MAX_THREADS = 20
+MIN_PLAYCOUNT = 9
 
 def signal_handler(signal, frame):
     print("Aborting...")
@@ -104,7 +105,7 @@ def insert2db(dbeng):
         os.remove(fname)
 
 def usage():
-    print("usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | purge]")
+    print("usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | html filename | purge]")
     sys.exit(1)
 
 def main():
@@ -172,10 +173,9 @@ def main():
                     if " ".join(artistname) in eventartists:
                         printEvent = True
 
-                # XXX Testing this feature.
                 # Don't show artists that have been listened only a few times
                 # (miss shots likely).
-                if artist["playcount"] < 9:
+                if artist["playcount"] < MIN_PLAYCOUNT:
                     printEvent = False
 
                 if printEvent:
@@ -194,7 +194,67 @@ def main():
                           event[2]))
                     print("{}\n".format(event[3]))
                     break # We are done, found already a matching artist
+    elif sys.argv[1] == "html":
+        if len(sys.argv) < 3:
+            print("ERROR: Missing output HTML filename")
+            usage()
+        with open(sys.argv[2], "w") as f:
+            f.write("<html>")
+            f.write('<meta charset="UTF-8">')
+            f.write(' <meta name="viewport" content="width=device-width, initial-scale=1.0">')
+            f.write("""
+<style>
+body {
+    background-color: darkgrey;
+}
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 15px;
+}
+</style>
+        """)
+            f.write('<table style="width=100%">')
+            f.write('  <tr>')
+            f.write('    <th>Matched artist</th>')
+            f.write('    <th>Playcount</th>')
+            f.write('    <th>Event date</th>')
+            f.write('    <th>Venue</th>')
+            f.write('    <th>Description</th>')
+            f.write('  </tr>')
+            for event in dbeng.getAllGigs():
+                for artist in dbeng.getArtists():
+                    printEvent = False
+                    artistname = artist["artist"].lower().split(" ")
+                    eventartists = event[3].lower()
 
+                    # Singly worded artist name
+                    if len(artistname) ==  1:
+                        if artistname[0] in eventartists.split(" "):
+                            printEvent = True
+                    # More than one word in artist's name
+                    else:
+                        if " ".join(artistname) in eventartists:
+                            printEvent = True
+
+                    # Don't show artists that have been listened only a few times
+                    # (miss shots likely).
+                    if artist["playcount"] < MIN_PLAYCOUNT:
+                        printEvent = False
+
+                    if printEvent:
+                        f.write('  <tr>')
+                        f.write(f'    <td>{artist["artist"]}</td>')
+                        f.write(f'    <td>{artist["playcount"]:d}</td>')
+                        f.write(f'    <td>{event[0]} </td>')
+                        f.write(f'    <td>{event[1]}, {event[2]}</td>')
+                        f.write(f'    <td>{event[3]}</td>')
+                        f.write('  </tr>')
+                        break # We are done, found already a matching artist
+            f.write("</table>")
+            f.write("</html>\n")
     elif sys.argv[1] == "purge":
         print("Purging past events...")
         dbeng.purgeOldEvents()
