@@ -15,7 +15,7 @@ def load_venue_plugins():
     Read plugin directory and load found plugins.
     Variable "blacklisted" can be used to exclude loading certain plugins.
     """
-    blacklisted = ["plugin_tiketti"]
+    blacklisted = ["plugin_tiketti", "plugin_yotalo", "plugin_glivelabtampere"]
     foundblacklisted = list()
     loadedplugins = list()
     pluginspathabs = os.path.join(os.path.dirname(__file__), "venues")

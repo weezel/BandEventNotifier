@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 from lxml import html
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     import requests
 
     y = Yotalo()
-    r = requests.get(d.url)
+    r = requests.get(y.url)
 
     for e in y.parseEvents(r.content):
         for k, v in e.items():
