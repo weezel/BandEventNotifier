@@ -58,6 +58,10 @@ do the following:
 	- i.e. `blacklisted = ["plugin_venuename"]`
 	- Run the fetch again
 
+Sometimes the domain dies and the plugin handler will go bonkers.
+In that case, remove all the `*.pickle` files from `venues/` directory and
+blacklist (and delete) the plugin.
+
 If you are not capable to fix the plugin by yourself, please contact the author
 of the plugin or me.
 
