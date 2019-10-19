@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import lxml.html
-
+import datetime
+import json
 import re
+import time
 
 
 class PluginParseError(Exception): pass
 
 class Klubi(object):
     def __init__(self):
-        self.url = "http://www.tullikamari.net/fi/klubi/ohjelma"
+        self.url = "http://www.tullikamari.net/fi/tapahtumat"
         self.name = "Klubi"
         self.city = "Tampere"
         self.country = "Finland"
-
-        # Parsing patterns
-        self.datepat = re.compile("[0-9]{,2}.[0-9]{,2}.[0-9]{4}")
 
     def getVenueName(self):
         return self.name
@@ -35,58 +33,45 @@ class Klubi(object):
                  "city" : self.city, \
                  "country" : self.country }
 
-    def parsePrice(self, line):
-        return "0" if "-" in line else "%s€" % line
+    def parseDateFromEpoc(self, date):
+        return datetime.datetime.fromtimestamp(date).strftime("%Y-%m-%d")
 
-    def parseDate(self, tag):
-        date = re.search(self.datepat, tag)
-        if date == None:
+    def parseArtists(self, artists):
+        if artists is None:
             return ""
+        return ", ".join([artist["nimi"] for artist in json.loads(artists)])
 
-        day, month, year = date.group().split(".")
-        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+    def parsePrice(self, e):
+        from_door = e["hinta"] if e["hinta"] is not None else 0
+        return "{}/{}€".format(e["ennakkolipun_hinta"], from_door)
 
-    def parseEvent(self, tag):
-        """
-        <span> Title
-        <h4>   Artist
-        <p>    Description
-        <div>  Time/doors
-        """
+    def parseEvent(self, e):
+        date = self.parseDateFromEpoc(int(e["aika_alku"]))
+        title = e["otsikko"].rstrip(":")
+        artist = self.parseArtists(e["artistit"])
+        desc = json.loads(e["kuvaus"]).get("summary")
+        price = self.parsePrice(e)
 
-        date = ""
-        title = ""
-        artist = ""
-        desc = ""
+        return { "venue" : self.getVenueName(),
+                 "date" : date,
+                 "name" : re.sub("\s+", " ", f"{title}: {artist} {desc}"),
+                 "price" : price }
 
-        datedata = " ".join(tag.xpath('./span[@class="date "]/text()'))
-        date = self.parseDate(datedata)
+    def parseEvents(self, json_data):
+        events_line_pattern = re.compile(r"^\s+\$scope.events = ")
+        events = None
+        for line in json_data.decode("utf-8").split("\n"):
+            if re.search(events_line_pattern, line):
+                events = line
+                break
+        if events == None:
+            raise PluginParseError("Parsing Klubi failed")
+        normalized = re.sub(events_line_pattern, "", events).rstrip(";\r")
+        doc = json.loads(normalized)
 
-        for node in tag.xpath('./div[@class="event-content"]'):
-            title = " ".join(node.xpath('./span[@class="title"]/a/text()'))
-            title = re.sub("\s+", " ", title).rstrip("\n").rstrip(" ")
-
-            artist = ", ".join([a for a in node.xpath('./h4[@class="artist"]/h4/a/text()')])
-            artist = re.sub("\s+", " ", artist).rstrip("\n").lstrip(" ").rstrip(" ")
-
-            desc = " ".join(node.xpath('./p/text()'))
-            desc = re.sub("\s+", " ", desc).lstrip(" ").rstrip("\n").rstrip(" ")
-
-            price = self.parsePrice( \
-                    " ".join(node.xpath('./div[@class="info"]' \
-                               + '/span[@class="price"]/text()')))
-
-            return { "venue" : self.getVenueName(),  \
-                     "date" : date,                   \
-                     "name" : "%s%s %s" % (title, artist, desc), \
-                     "price" : price }
-
-    def parseEvents(self, data):
-        doc = lxml.html.fromstring(data)
-        eventtags = doc.xpath('//ul[@class="upcoming-events-list"]/li')
-
-        for et in eventtags:
-            yield self.parseEvent(et)
+        for e in doc:
+            if e["tila"] == "Klubi":
+                yield self.parseEvent(e)
 
 if __name__ == '__main__':
     import requests
