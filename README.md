@@ -36,11 +36,6 @@ Create `USERNAME` file under the repository and put our LastFM username in there
 
 	echo my-lastfm-username > USERNAME
 
-Database won't get created automatically, yet, and therefore must be created
-manually:
-
-	$ sqlite3 bandevents.db < schema.sql
-
 Now, fetch some data and enjoy!
 
 	$ ./bandeventnotifier.py fetch
@@ -70,10 +65,6 @@ Software is BSD Licensed, please see [LICENSE](LICENSE) for more info.
 
 ## TODO
 - [ ] Change row\_factor to sqlite3.Row
-
-- [ ] Sort plugins by Country/City/venuename
-
-- [ ] Switch to SQL Alchemy
 
 - [X] Improve (dev) documentation
 

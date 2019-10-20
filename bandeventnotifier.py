@@ -109,6 +109,9 @@ def usage():
     sys.exit(1)
 
 def main():
+    if not os.path.exists(dbengine.dbname):
+        dbengine.init_db()
+
     dbeng = dbengine.DBEngine()
 
     if len(sys.argv) < 2:

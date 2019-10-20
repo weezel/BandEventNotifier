@@ -6,6 +6,18 @@ import sqlite3
 dbname = "bandevents.db"
 
 
+def init_db():
+    sql_schema = ""
+
+    with open("schema.sql", "r") as f:
+        sql_schema = f.readlines()
+
+    with sqlite3.connect(dbname) as conn:
+        cur = conn.cursor()
+        for stmt in sql_schema:
+            cur.execute(stmt)
+        conn.commit()
+
 class DBEngine(object):
     def __init__(self):
         self.conn = None
