@@ -11,7 +11,7 @@ class PluginParseError(Exception): pass
 class Glivelabhelsinki(object):
     def __init__(self):
         self.url = "https://www.glivelab.fi/?show_all=1"
-        self.name = "G Livelab"
+        self.name = "G Livelab Helsinki"
         self.city = "Helsinki"
         self.country = "Finland"
 
