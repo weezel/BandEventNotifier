@@ -8,7 +8,7 @@ import re
 
 class PluginParseError(Exception): pass
 
-class GLivelabTampere(object):
+class Glivelabtampere(object):
     def __init__(self):
         self.url = "https://www.glivelab.fi/tampere/"
         self.name = "G Livelab"

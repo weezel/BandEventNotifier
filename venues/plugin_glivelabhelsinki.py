@@ -8,9 +8,9 @@ import re
 
 class PluginParseError(Exception): pass
 
-class GLivelabTampere(object):
+class Glivelabhelsinki(object):
     def __init__(self):
-        self.url = "https://www.glivelab.fi/"
+        self.url = "https://www.glivelab.fi/?show_all=1"
         self.name = "G Livelab"
         self.city = "Helsinki"
         self.country = "Finland"
@@ -58,7 +58,7 @@ class GLivelabTampere(object):
             # Hence, go back one node and list all of it's descendants.
             prev_nodes = node.xpath('../*')
             if len(prev_nodes) != 2:
-                raise PluginParseError("Failed to parse GliveLab Tampere")
+                raise PluginParseError("Failed to parse GliveLab Helsinki")
             # First node is "img-wrapper" which we are not interested
             title = " ".join(prev_nodes[1].xpath('./div/h2/text()'))
             title = self.normalize_string(title)
@@ -84,7 +84,7 @@ class GLivelabTampere(object):
 if __name__ == '__main__':
     import requests
 
-    g = GLivelabTampere()
+    g = GLivelabHelsinki()
     r = requests.get(g.url)
 
     for e in g.parseEvents(r.content):
