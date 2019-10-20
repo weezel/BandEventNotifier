@@ -60,11 +60,10 @@ class LastFmRetriever(threading.Thread):
 
     def __parsePage(self, html):
         pat_numbers = re.compile("[0-9,]+")
-
         site = lxml.html.fromstring(html)
 
-        for libitem in site.xpath('//tbody/tr'):
-            artist = libitem.xpath('./td[@class="chartlist-name"]/span/a/text()')
+        for libitem in site.xpath('//table[contains(@class, "chartlist")]/tbody/tr[contains(@class, "chartlist-row")]'):
+            artist = libitem.xpath('./td[contains(@class, "chartlist-name")]/a/text()')
             artist = " ".join(artist).strip()
 
             # Bail early, no need to parse further.
@@ -74,8 +73,7 @@ class LastFmRetriever(threading.Thread):
             if artist == "":
                 continue
 
-            parsed_playcount = libitem.xpath('./td[@class="chartlist-countbar"]' \
-                                    + '/span/span/a/span/text()')
+            parsed_playcount = libitem.xpath('./td[contains(@class, "chartlist-bar")]/span/a/span[contains(@class, "chartlist-count-bar-value")]/text()')
             parsed_playcount = " ".join(parsed_playcount)
             playcount = re.search(pat_numbers, parsed_playcount)
             playcount = playcount.group().replace(",", "")
