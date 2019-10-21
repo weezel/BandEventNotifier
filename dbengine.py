@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
+import threading
 
 dbname = "bandevents.db"
 
@@ -23,6 +24,7 @@ class DBEngine(object):
         self.conn = None
         self.cur = None
         self.__firstRun()
+        self.lock = threading.Lock()
 
     def __firstRun(self):
         if self.conn == None:
@@ -31,10 +33,11 @@ class DBEngine(object):
             self.cur = self.conn.cursor()
 
     def close(self):
-        if self.cur:
-            self.cur.close()
-        if self.conn:
-            self.conn.close()
+        with self.lock:
+            if self.cur:
+                self.cur.close()
+            if self.conn:
+                self.conn.close()
 
     def pluginCreateVenueEntity(self, venuedict):
         """
@@ -46,28 +49,31 @@ class DBEngine(object):
         placeholders = ":" + ", :".join(venuedict.keys())
         q = "INSERT OR IGNORE INTO venue (%s) VALUES (%s);" \
                 % (cols, placeholders)
-        self.cur.execute(q, venuedict)
-        self.conn.commit()
+        with self.lock:
+            self.cur.execute(q, venuedict)
+            self.conn.commit()
 
     def insertVenueEvents(self, venue):
         """
         Insert parsed events from a venue into the database.
         """
-        # Replace venue by venueid
-        venue["venueid"] = self.getVenueByName(venue["venue"])[0]
-        # TODO Why do we have this keyword in the dict in general...
-        venue.pop("venue") # No such column in SQL db
-        cols = ", ".join(venue.keys())
-        placeholders = ":" + ", :".join(venue.keys())
-        q = "INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
-                % (cols, placeholders)
-        self.cur.execute(q, venue)
-        self.conn.commit()
+        with self.lock:
+            # Replace venue by venueid
+            venue["venueid"] = self.getVenueByName(venue["venue"])[0]
+            # TODO Why do we have this keyword in the dict in general...
+            venue.pop("venue") # No such column in SQL db
+            cols = ", ".join(venue.keys())
+            placeholders = ":" + ", :".join(venue.keys())
+            q = "INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
+                    % (cols, placeholders)
+            self.cur.execute(q, venue)
+            self.conn.commit()
 
     def insertLastFMartists(self, artist, playcount):
         q = "INSERT OR REPLACE INTO artist (name, playcount) VALUES (?, ?);"
-        self.cur.execute(q, [artist, playcount])
-        self.conn.commit()
+        with self.lock:
+            self.cur.execute(q, [artist, playcount])
+            self.conn.commit()
 
     def getVenues(self):
         q = "SELECT id, name, city, country FROM venue"
@@ -105,8 +111,9 @@ class DBEngine(object):
     def purgeOldEvents(self):
         q = "DELETE FROM event " \
             + "WHERE strftime('%Y-%m-%d', date) < date('now');"
-        self.cur.execute(q)
-        self.conn.commit()
+        with self.lock:
+            self.cur.execute(q)
+            self.conn.commit()
 
 if __name__ == '__main__':
     db = DBEngine()

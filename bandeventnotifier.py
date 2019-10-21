@@ -4,7 +4,6 @@
 import datetime
 import glob
 import os
-import pickle
 import requests
 import signal
 import sys
@@ -19,6 +18,7 @@ import utils
 
 MAX_THREADS = 20
 MIN_PLAYCOUNT = 9
+
 
 def signal_handler(signal, frame):
     print("Aborting...")
@@ -48,6 +48,10 @@ class Fetcher(threading.Thread):
             venueparsed = list()
             try:
                 for i in venue.parseEvents(venuehtml):
+                    if i is None or len(i) == 0:
+                        print(f"Couldn't parse venue: {venue.getVenueName()}")
+                        self.fetchqueue.task_done()
+                        return
                     venueparsed.append(i)
             except TypeError as te:
                 print("{} Error while parsing {} venue".format( \
@@ -56,11 +60,7 @@ class Fetcher(threading.Thread):
                 self.fetchqueue.task_done()
                 return
 
-            # XXX Pickle hack to dodge SQLite concurrency problems.
             venue.parseddata = venueparsed
-            fname = os.path.join("venues", venue.__class__.__name__ + ".pickle")
-            pickle.dump(venue, open(fname, "wb"))
-
             self.fetchqueue.task_done()
 
     def __fetch(self, venue):
@@ -87,22 +87,6 @@ class Fetcher(threading.Thread):
                 if r.status_code is 200:
                     break
         return r.content
-
-def insert2db(dbeng):
-    # Create needed venue entries to database.
-    # XXX Remove pickle handler once the SQL concurrency problems are fixed.
-
-    # And here we load the venues again, yes annoying. More memory/CPU
-    # efficient implementation on it's way.
-    for fname in glob.iglob("venues/*.pickle"):
-        venue = pickle.load(open(fname, "rb"))
-        # Create needed entries in venue table
-        dbeng.pluginCreateVenueEntity(venue.eventSQLentity())
-
-        for v in venue.parseddata:
-            dbeng.insertVenueEvents(v)
-        # Remove pickle file
-        os.remove(fname)
 
 def usage():
     print("usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | html filename | purge]")
@@ -153,7 +137,10 @@ def main():
             print("[=] Venues data fetched.")
 
             print("[+] Inserting into a database...")
-            insert2db(dbeng)
+            dbeng.pluginCreateVenueEntity(venue.eventSQLentity())
+
+            for v in venue.parseddata:
+                dbeng.insertVenueEvents(v)
             print("[=] Venues added into the database.")
         else:
             usage()
