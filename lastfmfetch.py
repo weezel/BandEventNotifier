@@ -13,6 +13,10 @@ FNAME = "USERNAME"
 
 
 class LfmUserError(Exception): pass
+class LfmException(Exception): pass
+
+def isEmpty(s):
+    return True if s is None or len(s) < 1 else False
 
 class LastFmRetriever(threading.Thread):
     def __init__(self, queue, all_bands):
@@ -66,17 +70,13 @@ class LastFmRetriever(threading.Thread):
             artist = libitem.xpath('./td[contains(@class, "chartlist-name")]/a/text()')
             artist = " ".join(artist).strip()
 
-            # Bail early, no need to parse further.
-            # Since we use fairly eager matching, LastFM's newest changes
-            # hit in this rule too.
-            # The mismatch is caused by "Listening History" charts.
-            if artist == "":
-                continue
-
             parsed_playcount = libitem.xpath('./td[contains(@class, "chartlist-bar")]/span/a/span[contains(@class, "chartlist-count-bar-value")]/text()')
             parsed_playcount = " ".join(parsed_playcount)
             playcount = re.search(pat_numbers, parsed_playcount)
             playcount = playcount.group().replace(",", "")
+
+            if isEmpty(artist) or isEmpty(playcount):
+                raise LfmException(f"Failed to parse artist ({artist}) or playcount ({playcount})")
 
             self.artists_playcounts[artist] = int(playcount)
 
