@@ -24,6 +24,7 @@ def signal_handler(signal, frame):
     print("Aborting...")
     sys.exit(1)
 
+
 class Fetcher(threading.Thread):
     def __init__(self, q, dbobj=None):
         threading.Thread.__init__(self)
@@ -55,8 +56,8 @@ class Fetcher(threading.Thread):
                     venueparsed.append(i)
             except TypeError as te:
                 print("{} Error while parsing {} venue".format( \
-                        (utils.colorize("/_!_\\", "red"),    \
-                         venue.getVenueName())))
+                    (utils.colorize("/_!_\\", "red"), \
+                     venue.getVenueName())))
                 self.fetchqueue.task_done()
                 return
 
@@ -88,9 +89,11 @@ class Fetcher(threading.Thread):
                     break
         return r.content
 
+
 def usage():
     print("usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | html filename | purge]")
     sys.exit(1)
+
 
 def main():
     if not os.path.exists(dbengine.dbname):
@@ -155,7 +158,7 @@ def main():
                 eventartists = event[3].lower()
 
                 # Singly worded artist name
-                if len(artistname) ==  1:
+                if len(artistname) == 1:
                     if artistname[0] in eventartists.split(" "):
                         printEvent = True
                 # More than one word in artist's name
@@ -170,20 +173,20 @@ def main():
 
                 if printEvent:
                     print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format( \
-                          artist["artist"], \
-                          artist["playcount"]), \
-                          "yellow"))
+                        artist["artist"], \
+                        artist["playcount"]), \
+                        "yellow"))
                     if datetime.datetime.strptime(event[0], "%Y-%m-%d") <= \
-                                                  weektimespan:
+                            weektimespan:
                         gigdate = utils.colorize(event[0], "red")
                     else:
                         gigdate = utils.colorize(event[0], "bold")
                     print("[{}] {}, {}".format( \
-                          gigdate, \
-                          utils.colorize(event[1], "cyan"), \
-                          event[2]))
+                        gigdate, \
+                        utils.colorize(event[1], "cyan"), \
+                        event[2]))
                     print("{}\n".format(event[3]))
-                    break # We are done, found already a matching artist
+                    break  # We are done, found already a matching artist
     elif sys.argv[1] == "html":
         if len(sys.argv) < 3:
             print("ERROR: Missing output HTML filename")
@@ -221,7 +224,7 @@ th, td {
                     eventartists = event[3].lower()
 
                     # Singly worded artist name
-                    if len(artistname) ==  1:
+                    if len(artistname) == 1:
                         if artistname[0] in eventartists.split(" "):
                             printEvent = True
                     # More than one word in artist's name
@@ -242,7 +245,7 @@ th, td {
                         f.write(f'    <td>{event[1]}, {event[2]}</td>')
                         f.write(f'    <td>{event[3]}</td>')
                         f.write('  </tr>')
-                        break # We are done, found already a matching artist
+                        break  # We are done, found already a matching artist
             f.write("</table>")
             f.write("</html>\n")
     elif sys.argv[1] == "purge":
@@ -253,8 +256,8 @@ th, td {
 
     dbeng.close()
 
+
 if __name__ == '__main__':
     # Allow CTRL+C termination
     signal.signal(signal.SIGINT, signal_handler)
     main()
-
