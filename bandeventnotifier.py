@@ -79,13 +79,12 @@ class Fetcher(threading.Thread):
             return ""
         elif r.status_code != 200:
             for retry in range(0, retries):
-                print(f"Couldn't connect {venue.url}, ", end="")
-                print("retrying in {:2d} seconds [{:2d}/{:2d}]..." % \
-                      venue.url, sleeptimesec, retry + 1, retries)
+                print(f"Couldn't connect {venue.name}[{venue.city}] {venue.url}, ", end="")
+                print(f"retrying in {sleeptimesec:.0f} seconds [{retry + 1:1d}/{retries:2d}]...")
                 time.sleep(sleeptimesec)
                 r = requests.get(venue.url, timeout=5)
 
-                if r.status_code is 200:
+                if r.status_code == 200:
                     break
         return r.content
 
