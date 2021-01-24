@@ -1,11 +1,17 @@
-OBJ	= tests.py
+OBJ		:= tests.py
+VENV_DIR	:= .venv
 
 .PHONY: clean
 
-all: clean
-	python $(OBJ)
+install:
+	python3 -m venv $(VENV_DIR) && \
+		. $(VENV_DIR)/bin/activate && \
+		pip3 install -r requirements.txt && \
+		deactivate
+run:
+	$(VENV_DIR)/bin/python3 bandeventnotifier.py
 graphs:
 	dot -Tpng structure.dot -o structure.png
 clean:
-	rm -f *.pyc
+	rm -rf *.pyc $(VENV_DIR)
 

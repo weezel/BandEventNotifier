@@ -21,16 +21,12 @@ Works for me (TM).
 
 ## Dependencies
 - Python 3.x
-- venv
-- pip3
 - python-dev
 
 ## Setup
-Activate venv and install needed packages:
-	python3 -m venv BandEventNotifier
-	cd BandEventNotifier
-	. bin/activate
-	pip3 install -r requirements.txt
+Install dependencies under `.venv` directory by running:
+
+	make install
 
 Create `USERNAME` file under the repository and put our LastFM username in there:
 
