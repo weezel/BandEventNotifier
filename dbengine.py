@@ -3,6 +3,7 @@
 
 import sqlite3
 import threading
+from typing import Dict, Generator
 
 dbname = "bandevents.db"
 
@@ -18,125 +19,178 @@ def init_db():
         for stmt in sql_schema:
             cur.execute(stmt)
         conn.commit()
+        cur.close()
+
 
 class DBEngine(object):
     def __init__(self):
         self.conn = None
-        self.cur = None
-        self.__firstRun()
+        self.__first_run()
         self.lock = threading.Lock()
 
-    def __firstRun(self):
-        if self.conn == None:
+    def __first_run(self):
+        if self.conn is None:
             self.conn = sqlite3.connect(dbname)
-        if self.cur == None:
-            self.cur = self.conn.cursor()
 
     def close(self):
-        with self.lock:
-            if self.cur:
-                self.cur.close()
-            if self.conn:
-                self.conn.close()
+        while True:
+            with self.lock:
+                if self.conn:
+                    self.conn.close()
+                break
 
-    def pluginCreateVenueEntity(self, venuedict):
+    def pluginCreateVenueEntity(self, venue: Dict[str, str]) -> None:
         """
         Create needed venue entries.
 
-        Parameter venuedict is Dogshome.eventSQLentity(), i.e.
+        Parameter venue is Dogshome.eventSQLentity(), i.e.
         """
-        cols = ", ".join(venuedict.keys())
-        placeholders = ":" + ", :".join(venuedict.keys())
+        cols = ", ".join(venue.keys())
+        placeholders = ":" + ", :".join(venue.keys())
         q = "INSERT OR IGNORE INTO venue (%s) VALUES (%s);" \
-                % (cols, placeholders)
-        with self.lock:
-            self.cur.execute(q, venuedict)
-            self.conn.commit()
+            % (cols, placeholders)
+        while True:
+            with self.lock:
+                cur = None
+                try:
+                    cur = self.conn.cursor()
+                    cur.execute(q, venue)
+                    self.conn.commit()
+                except Exception as e:
+                    print(f"Failed with error message: {e}")
+                finally:
+                    cur.close()
+                    break
 
     def insertVenueEvents(self, venue):
         """
         Insert parsed events from a venue into the database.
         """
-        with self.lock:
-            # Replace venue by venueid
-            venue["venueid"] = self.getVenueByName(venue["venue"])[0]
-            # TODO Why do we have this keyword in the dict in general...
-            venue.pop("venue") # No such column in SQL db
-            cols = ", ".join(venue.keys())
-            placeholders = ":" + ", :".join(venue.keys())
-            q = "INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
+        while True:
+            with self.lock:
+                # Replace venue by venueid
+                venue["venueid"] = self.getVenueByName(venue["venue"])[0]
+                # TODO Why do we have this keyword in the dict in general...
+                venue.pop("venue")  # No such column in SQL db
+                cols = ", ".join(venue.keys())
+                placeholders = ":" + ", :".join(venue.keys())
+                q = "INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
                     % (cols, placeholders)
-            self.cur.execute(q, venue)
-            self.conn.commit()
+                cur = None
+                try:
+                    cur = self.conn.cursor()
+                    cur.execute(q, venue)
+                    self.conn.commit()
+                except Exception as e:
+                    print(f"Failed with error message: {e}")
+                finally:
+                    cur.close()
+                    break
 
     def insertLastFMartists(self, artist, playcount):
         q = "INSERT OR REPLACE INTO artist (name, playcount) VALUES (?, ?);"
-        with self.lock:
-            self.cur.execute(q, [artist, playcount])
-            self.conn.commit()
+        while True:
+            with self.lock:
+                cur = None
+                try:
+                    cur = self.conn.cursor()
+                    cur.execute(q, [artist, playcount])
+                    self.conn.commit()
+                except Exception as e:
+                    print(f"Failed with error message: {e}")
+                finally:
+                    cur.close()
+                    break
 
-    def getVenues(self):
+    def getVenues(self) -> Dict[str, str]:
         q = "SELECT id, name, city, country FROM venue"
-        results = self.cur.execute(q)
-        return results.fetchall()
+        cur = None
+        results = dict()
+        try:
+            cur = self.conn.cursor()
+            res = cur.conn.execute(q)
+            results = res.fetchall()
+        except Exception as e:
+            print(f"Failed with error message: {e}")
+        finally:
+            cur.close()
 
-    def getVenueByName(self, vname):
+        return results
+
+    def getVenueByName(self, vname) -> str:
         q = "SELECT id, name, city, country FROM venue " \
             + "WHERE name = ? LIMIT 1;"
-        results = self.cur.execute(q, [vname])
-        return results.fetchone()
+        venue_name = str()
+        cur = None
+        try:
+            cur = self.conn.cursor()
+            results = cur.execute(q, [vname])
+            venue_name = results.fetchone()
+        except Exception as e:
+            print(f"Failed with error message: {e}")
+        finally:
+            cur.close()
 
-    def getAllGigs(self):
-        q = "SELECT DISTINCT e.date, v.name, v.city, e.name "            \
+        return venue_name
+
+    def getAllGigs(self) -> dict:
+        q = "SELECT DISTINCT e.date, v.name, v.city, e.name " \
             + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
             + "GROUP BY e.date, v.name ORDER BY e.date ASC;"
-        results = self.cur.execute(q)
-        return results.fetchall()
+        gigs = dict()
+        cur = None
+        try:
+            cur = self.conn.cursor()
+            results = cur.execute(q)
+            gigs = results.fetchall()
+        except Exception as e:
+            print(f"Failed with error message: {e}")
+        finally:
+            cur.close()
 
-    def getArtists(self):
+        return gigs
+
+    def getArtists(self) -> Generator[Dict[str, str], None, None]:
         q = "SELECT name, playcount FROM artist;"
-        results = self.cur.execute(q)
-        for artist, playcount in results.fetchall():
-            yield {"artist" : artist, \
-                   "playcount" : playcount}
+        cur = None
+        try:
+            cur = self.conn.cursor()
+            results = cur.execute(q)
+            for artist, playcount in results.fetchall():
+                yield {"artist": artist,
+                       "playcount": playcount}
+        except Exception as e:
+            print(f"Failed with error message: {e}")
+        finally:
+            cur.close()
 
-    def getArtist(self, aname):
+    def getArtist(self, aname: str) -> Generator[Dict[str, str], None, None]:
         q = "SELECT name, playcount FROM artist " \
             + "WHERE name = ? LIMIT 5;"
-        results = self.cur.execute(q, [aname])
-        for artist, playcount in results.fetchall():
-            yield { "artist" : artist, \
-                    "playcount" : playcount }
+        cur = None
+        try:
+            cur = self.conn.cursor()
+            results = cur.execute(q, [aname])
+            for artist, playcount in results.fetchall():
+                yield {"artist": artist,
+                       "playcount": playcount}
+        except Exception as e:
+            print(f"Failed with error message: {e}")
+        finally:
+            cur.close()
 
     def purgeOldEvents(self):
         q = "DELETE FROM event " \
             + "WHERE strftime('%Y-%m-%d', date) < date('now');"
-        with self.lock:
-            self.cur.execute(q)
-            self.conn.commit()
-
-if __name__ == '__main__':
-    db = DBEngine()
-
-    def testDogsHomePlugin():
-        import venues.plugin_dogshome
-
-        doggari = venues.plugin_dogshome.Dogshome()
-
-        db.pluginCreateVenueEntity(doggari.eventSQLentity())
-        assert(db.getVenues() == [(1, "Dog's home", 'Tampere', 'Finland')])
-        assert(db.getVenueByName("Dog's home") == (1, "Dog's home", \
-               'Tampere', 'Finland'))
-        assert(db.getVenueByName("Testijuottola that should fail") == None)
-        db.insertVenueEvents(doggari.parseEvents(""))
-
-    def testLastFmFetch():
-        ## Test LastFM retriever
-        import lastfmfetch
-
-        lfmr = lastfmfetch.LastFmRetriever(db)
-        for artist in lfmr.getAllListenedBands(limit=5):
-            db.insertLastFMartists(artist)
-
-    db.close()
-
+        while True:
+            with self.lock:
+                cur = None
+                try:
+                    cur = self.conn.cursor()
+                    cur.execute(q)
+                    self.conn.commit()
+                except Exception as e:
+                    print(f"Failed with error message: {e}")
+                finally:
+                    cur.close()
+                    break
