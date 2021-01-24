@@ -55,9 +55,8 @@ class Fetcher(threading.Thread):
                         return
                     venueparsed.append(i)
             except TypeError as te:
-                print("{} Error while parsing {} venue".format( \
-                    (utils.colorize("/_!_\\", "red"), \
-                     venue.getVenueName())))
+                print("{} Error while parsing {} venue".format(
+                    (utils.colorize("/_!_\\", "red"), venue.getVenueName())))
                 self.fetchqueue.task_done()
                 return
 
