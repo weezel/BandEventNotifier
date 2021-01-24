@@ -11,7 +11,7 @@ dbname = "bandevents.db"
 def init_db() -> None:
     sql_schema = ""
 
-    with open("schema.sql", "r") as f:
+    with open("schema.sql", mode="r", encoding="utf-8") as f:
         sql_schema = f.readlines()
 
     with sqlite3.connect(dbname) as conn:

@@ -191,7 +191,7 @@ def main() -> None:
         if len(sys.argv) < 3:
             print("ERROR: Missing output HTML filename")
             usage()
-        with open(sys.argv[2], "w") as f:
+        with open(sys.argv[2], mode="w", encoding="utf-8") as f:
             f.write("<html>")
             f.write('<meta charset="UTF-8">')
             f.write(' <meta name="viewport" content="width=device-width, initial-scale=1.0">')

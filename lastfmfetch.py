@@ -36,7 +36,7 @@ class LastFmRetriever(threading.Thread):
         """
         data = list()
 
-        with open(fname, "r") as f:
+        with open(fname, mode="r", encoding="utf-8") as f:
             for line in f:
                 data.append(line.replace("\n", ""))
 
