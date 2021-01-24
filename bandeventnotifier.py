@@ -26,18 +26,18 @@ def signal_handler(signal, frame):
 
 
 class Fetcher(threading.Thread):
-    def __init__(self, q, dbobj=None):
+    def __init__(self, q, dbeng: dbengine.DBEngine) -> None:
         threading.Thread.__init__(self)
         self.fetchqueue = q
         self.dbeng = None
 
-        self.__dbInit(dbobj)
+        self.__db_init(dbeng)
 
-    def __dbInit(self, dbobj):
-        if self.dbeng == None:
+    def __db_init(self, dbobj) -> None:
+        if self.dbeng is None:
             self.dbeng = dbobj
 
-    def run(self):
+    def run(self) -> None:
         while True:
             venue = self.fetchqueue.get()
             print(f"[+] Fetching and parsing venue '{venue.name}'")
@@ -55,15 +55,17 @@ class Fetcher(threading.Thread):
                         return
                     venueparsed.append(i)
             except TypeError as te:
-                print("{} Error while parsing {} venue".format(
-                    (utils.colorize("/_!_\\", "red"), venue.getVenueName())))
+                print("{} Error while parsing {}venue".format(
+                    utils.colorize("/_!_\\", "red"),
+                    venue.getVenueName()))
                 self.fetchqueue.task_done()
                 return
 
             venue.parseddata = venueparsed
             self.fetchqueue.task_done()
 
-    def __fetch(self, venue):
+    # FIXME Add type
+    def __fetch(self, venue) -> str:
         retries = 3
         sleeptimesec = 5.0
         try:
@@ -88,12 +90,12 @@ class Fetcher(threading.Thread):
         return r.content
 
 
-def usage():
+def usage() -> None:
     print("usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | html filename | purge]")
     sys.exit(1)
 
 
-def main():
+def main() -> None:
     if not os.path.exists(dbengine.dbname):
         dbengine.init_db()
 
@@ -166,24 +168,24 @@ def main():
 
                 # Don't show artists that have been listened only a few times
                 # (miss shots likely).
-                if artist["playcount"] < MIN_PLAYCOUNT:
+                if int(artist["playcount"]) < MIN_PLAYCOUNT:
                     printEvent = False
 
                 if printEvent:
-                    print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format( \
-                        artist["artist"], \
-                        artist["playcount"]), \
+                    print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format(
+                        artist["artist"],
+                        int(artist["playcount"])),
                         "yellow"))
                     if datetime.datetime.strptime(event[0], "%Y-%m-%d") <= \
                             weektimespan:
                         gigdate = utils.colorize(event[0], "red")
                     else:
                         gigdate = utils.colorize(event[0], "bold")
-                    print("[{}] {}, {}".format( \
-                        gigdate, \
-                        utils.colorize(event[1], "cyan"), \
+                    print("[{}] {}, {}".format(
+                        gigdate,
+                        utils.colorize(event[1], "cyan"),
                         event[2]))
-                    print("{}\n".format(event[3]))
+                    print(f"{event[3]}\n")
                     break  # We are done, found already a matching artist
     elif sys.argv[1] == "html":
         if len(sys.argv) < 3:
