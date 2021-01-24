@@ -4,6 +4,7 @@
 import re
 import threading
 from queue import Queue
+from typing import Tuple, Generator, List
 
 import lxml.html
 import requests
@@ -18,7 +19,7 @@ class LfmException(Exception): pass
 
 
 def isEmpty(s):
-    return True if s is None or len(s) < 1 else False
+    return True if s is None or len(s) == 0 else False
 
 
 class LastFmRetriever(threading.Thread):
@@ -43,18 +44,18 @@ class LastFmRetriever(threading.Thread):
         if len(data) == 1:
             return data[0]
 
+    # FIXME Add venue type
     def calculatePopularity(self, allbands, thisband):
         totalplaycount = sum([int(artist.playcount) for artist in allbands])
         return thisband.playcount / totalplaycount * 100.0
 
-    def getPaginatedPages(self):
+    def getPaginatedPages(self) -> List[str]:
         """
         Returns a list of LastFM library pages. For example:
         [http://www.last.fm/user/exampleUser/library/artists?page=1
          http://www.last.fm/user/exampleUser/library/artists?page=2
          http://www.last.fm/user/exampleUser/library/artists?page=3]
         """
-        pageidx = 1
         html = requests.get(self.url.format(
             username=self.__username,
             pagenumber=1))
@@ -67,7 +68,7 @@ class LastFmRetriever(threading.Thread):
         return [self.url.format(username=self.__username, pagenumber=i)
                 for i in range(1, pagescount + 1)]
 
-    def __parsePage(self, html):
+    def __parsePage(self, html: str) -> None:
         pat_numbers = re.compile("[0-9,]+")
         site = lxml.html.fromstring(html)
 
@@ -86,20 +87,20 @@ class LastFmRetriever(threading.Thread):
 
             self.artists_playcounts[artist] = int(playcount)
 
-    def getArtistsPlaycounts(self):
+    def getArtistsPlaycounts(self) -> Generator[Tuple[str, int], None, None]:
         for k, v in self.artists_playcounts.items():
-            yield k, v
+            yield k, int(v)
 
-    def __fetch(self, url):
+    def __fetch(self, url: str) -> str:
         print(f"Getting data from: {url}", end="\r")
         reply = requests.get(url)
         if not reply.ok:
             print(f"Couldn't fetch data from URL: {url}")
-            return
+            return ""
         print(f"Completed fetching on {url}")
         return reply.content
 
-    def run(self):
+    def run(self) -> None:
         while True:
             url = self.__queue.get()
             html = self.__fetch(url)
