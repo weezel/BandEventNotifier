@@ -8,7 +8,7 @@ from typing import Dict, Generator
 dbname = "bandevents.db"
 
 
-def init_db():
+def init_db() -> None:
     sql_schema = ""
 
     with open("schema.sql", "r") as f:
@@ -23,16 +23,16 @@ def init_db():
 
 
 class DBEngine(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.conn = None
         self.__first_run()
         self.lock = threading.Lock()
 
-    def __first_run(self):
+    def __first_run(self) -> None:
         if self.conn is None:
             self.conn = sqlite3.connect(dbname)
 
-    def close(self):
+    def close(self) -> None:
         while True:
             with self.lock:
                 if self.conn:
@@ -62,7 +62,8 @@ class DBEngine(object):
                     cur.close()
                     break
 
-    def insertVenueEvents(self, venue):
+    # FIXME Create a proper venue interface
+    def insertVenueEvents(self, venue) -> None:
         """
         Insert parsed events from a venue into the database.
         """
@@ -87,7 +88,7 @@ class DBEngine(object):
                     cur.close()
                     break
 
-    def insertLastFMartists(self, artist, playcount):
+    def insertLastFMartists(self, artist: str, playcount: int) -> None:
         q = "INSERT OR REPLACE INTO artist (name, playcount) VALUES (?, ?);"
         while True:
             with self.lock:
@@ -117,7 +118,7 @@ class DBEngine(object):
 
         return results
 
-    def getVenueByName(self, vname) -> str:
+    def getVenueByName(self, vname: str) -> str:
         q = "SELECT id, name, city, country FROM venue " \
             + "WHERE name = ? LIMIT 1;"
         venue_name = str()
@@ -133,7 +134,7 @@ class DBEngine(object):
 
         return venue_name
 
-    def getAllGigs(self) -> dict:
+    def getAllGigs(self) -> Dict[str, str]:
         q = "SELECT DISTINCT e.date, v.name, v.city, e.name " \
             + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
             + "GROUP BY e.date, v.name ORDER BY e.date ASC;"
@@ -164,13 +165,13 @@ class DBEngine(object):
         finally:
             cur.close()
 
-    def getArtist(self, aname: str) -> Generator[Dict[str, str], None, None]:
+    def getArtist(self, name: str) -> Generator[Dict[str, str], None, None]:
         q = "SELECT name, playcount FROM artist " \
             + "WHERE name = ? LIMIT 5;"
         cur = None
         try:
             cur = self.conn.cursor()
-            results = cur.execute(q, [aname])
+            results = cur.execute(q, [name])
             for artist, playcount in results.fetchall():
                 yield {"artist": artist,
                        "playcount": playcount}
@@ -179,7 +180,7 @@ class DBEngine(object):
         finally:
             cur.close()
 
-    def purgeOldEvents(self):
+    def purgeOldEvents(self) -> None:
         q = "DELETE FROM event " \
             + "WHERE strftime('%Y-%m-%d', date) < date('now');"
         while True:
