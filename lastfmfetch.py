@@ -8,15 +8,18 @@ from queue import Queue
 import lxml.html
 import requests
 
-
-FNAME = "USERNAME"
+filename = "USERNAME"
 
 
 class LfmUserError(Exception): pass
+
+
 class LfmException(Exception): pass
+
 
 def isEmpty(s):
     return True if s is None or len(s) < 1 else False
+
 
 class LastFmRetriever(threading.Thread):
     def __init__(self, queue, all_bands):
@@ -24,7 +27,7 @@ class LastFmRetriever(threading.Thread):
         self.__queue = queue
 
         self.artists_playcounts = all_bands
-        self.__username = self.__readUsername(FNAME)
+        self.__username = self.__readUsername(filename)
         self.url = "https://www.last.fm/user/{username}/library/artists?page={pagenumber}"
 
     def __readUsername(self, fname):
@@ -52,14 +55,16 @@ class LastFmRetriever(threading.Thread):
          http://www.last.fm/user/exampleUser/library/artists?page=3]
         """
         pageidx = 1
-        html = requests.get(self.url.format(username=self.__username, \
-                pagenumber=1))
+        html = requests.get(self.url.format(
+            username=self.__username,
+            pagenumber=1))
         site = lxml.html.fromstring(html.content)
 
-        pagestag = site.xpath('//li[contains(@class, " pagination-page")]' + \
-                              '/a/text()')
+        pagestag = site.xpath(
+            '//li[contains(@class, " pagination-page")]' +
+            '/a/text()')
         pagescount = max([int(i) for i in pagestag], key=lambda i: int(i))
-        return [self.url.format(username=self.__username, pagenumber=i) \
+        return [self.url.format(username=self.__username, pagenumber=i)
                 for i in range(1, pagescount + 1)]
 
     def __parsePage(self, html):
@@ -70,7 +75,8 @@ class LastFmRetriever(threading.Thread):
             artist = libitem.xpath('./td[contains(@class, "chartlist-name")]/a/text()')
             artist = " ".join(artist).strip()
 
-            parsed_playcount = libitem.xpath('./td[contains(@class, "chartlist-bar")]/span/a/span[contains(@class, "chartlist-count-bar-value")]/text()')
+            parsed_playcount = libitem.xpath(
+                './td[contains(@class, "chartlist-bar")]/span/a/span[contains(@class, "chartlist-count-bar-value")]/text()')
             parsed_playcount = " ".join(parsed_playcount)
             playcount = re.search(pat_numbers, parsed_playcount)
             playcount = playcount.group().replace(",", "")
@@ -100,6 +106,7 @@ class LastFmRetriever(threading.Thread):
             self.__parsePage(html)
             self.__queue.task_done()
 
+
 if __name__ == '__main__':
     lfmQueue = Queue()
     all_bands = dict()
@@ -120,4 +127,3 @@ if __name__ == '__main__':
                                   key=lambda x: x[1],
                                   reverse=True)):
         print(f"[{i:>6d}] {kv[1]:>6d}: {kv[0]}")
-
