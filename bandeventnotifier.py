@@ -111,17 +111,17 @@ def main():
         elif sys.argv[2] == "lastfm":
             print("[+] Fetching LastFM user data.")
             all_bands = dict()
-            lfmQueue = Queue()
-            lfmr = LastFmRetriever(lfmQueue, all_bands)
+            lfm_queue = Queue()
+            lfmr = LastFmRetriever(lfm_queue, all_bands)
             pages = lfmr.getPaginatedPages()
 
             for v in range(MAX_THREADS):
-                t = LastFmRetriever(lfmQueue, all_bands)
+                t = LastFmRetriever(lfm_queue, all_bands)
                 t.setDaemon(True)
                 t.start()
             for page in pages:
-                lfmQueue.put(page)
-            lfmQueue.join()
+                lfm_queue.put(page)
+            lfm_queue.join()
 
             for artist, playcount in lfmr.getArtistsPlaycounts():
                 dbeng.insertLastFMartists(artist, playcount)
