@@ -13,23 +13,27 @@ import sys
 def load_venue_plugins():
     """
     Read plugin directory and load found plugins.
-    Variable "blacklisted" can be used to exclude loading certain plugins.
+    Variable "blocklist" can be used to exclude loading certain plugins.
     """
-    blacklisted = ["plugin_tiketti", "plugin_yotalo", "plugin_glivelabtampere", "plugin_glivelabhelsinki"]
-    foundblacklisted = list()
+    blocklist = ["plugin_tiketti",
+                 "plugin_yotalo",
+                 "plugin_glivelabtampere",
+                 "plugin_glivelabhelsinki",
+                 "plugin_nosturi"]
+    found_blocked = list()
     loadedplugins = list()
     pluginspathabs = os.path.join(os.path.dirname(__file__), "venues")
 
     for loader, plugname, ispkg in \
-            pkgutil.iter_modules(path = [pluginspathabs]):
+            pkgutil.iter_modules(path=[pluginspathabs]):
         if plugname in sys.modules:
             continue
-        if plugname in blacklisted:
-            foundblacklisted.append(plugname.lstrip("plugin_"))
+        if plugname in blocklist:
+            found_blocked.append(plugname.lstrip("plugin_"))
             continue
 
         plugpath = "venues.%s" % (plugname)
-        loadplug = __import__(plugpath, fromlist = [plugname])
+        loadplug = __import__(plugpath, fromlist=[plugname])
 
         classname = plugname.split("_")[1].title()
         loadedclass = getattr(loadplug, classname)
@@ -37,8 +41,9 @@ def load_venue_plugins():
         instance = loadedclass()
         loadedplugins.append(instance)
         print(f"Loaded plugin: {instance.getVenueName()}")
-    print("Blacklisted plugins: {}.\n".format(", ".join(foundblacklisted[1:])))
-    return  loadedplugins
+    print("Blocked plugins: {}.\n".format(", ".join(found_blocked[1:])))
+    return loadedplugins
+
 
 if __name__ == '__main__':
     load_venue_plugins()
