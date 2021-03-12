@@ -13,19 +13,19 @@ class Vastavirta(object):
         self.city = "Tampere"
         self.country = "Finland"
         self.parseddata = None
-        self.monthmap = {   \
-                "Tammi" : 1,  \
-                "Helmi" : 2,  \
-                "Maalis" : 3,  \
-                "Huhti" : 4,  \
-                "Touko" : 5,  \
-                "Kesä" : 6,  \
-                "Heinä" : 7,  \
-                "Elo" : 8,  \
-                "Syys" : 9,  \
-                "Loka" : 10, \
-                "Marras" : 11, \
-                "Joulu" : 12 }
+        self.monthmap = {
+            "Tammi": 1,
+            "Helmi": 2,
+            "Maalis": 3,
+            "Huhti": 4,
+            "Touko": 5,
+            "Kesä": 6,
+            "Heinä": 7,
+            "Elo": 8,
+            "Syys": 9,
+            "Loka": 10,
+            "Marras": 11,
+            "Joulu": 12}
 
     def getVenueName(self):
         return self.name
@@ -37,9 +37,9 @@ class Vastavirta(object):
         return self.country
 
     def eventSQLentity(self):
-        return { "name" : self.name, \
-                 "city" : self.city, \
-                 "country" : self.country }
+        return {"name": self.name,
+                "city": self.city,
+                "country": self.country}
 
     def parsePrice(self, tag):
         parsedprice = tag.xpath('.//div[@class="event-details"]/*/text()')
@@ -59,7 +59,10 @@ class Vastavirta(object):
         month = " ".join(m).capitalize()
         year = " ".join(year)
 
-        if day is "" or month is "" or year is "":
+        is_day_empty = day == ""
+        is_month_empty = month == ""
+        is_year_empty = year == ""
+        if any([is_day_empty, is_month_empty, is_year_empty]):
             return ""
 
         month = self.monthmap[month]
@@ -70,16 +73,16 @@ class Vastavirta(object):
         etitle = " ".join(event.xpath('./*/div[@class="event-title"]/*/text()'))
         prices = self.parsePrice(event)
 
-        return { "venue" : self.getVenueName(), \
-                 "date" : date,                 \
-                 "name" : etitle,               \
-                 "price" : prices }
+        return {"venue": self.getVenueName(),
+                "date": date,
+                "name": etitle,
+                "price": prices}
 
     def parseEvents(self, data):
         doc = lxml.html.fromstring(data).getroottree().getroot()
         tags = doc.xpath('//div[@class="event-list"]/ul' \
-                       + '[@class="event-list-view"]'    \
-                       + '/li[@class="event "]')
+                         + '[@class="event-list-view"]' \
+                         + '/li[@class="event "]')
         tmp = ""
 
         for event in reversed(tags):
@@ -88,9 +91,10 @@ class Vastavirta(object):
             if parsed["date"] == "":
                 tmp += ", " + parsed["name"]
             else:
-                parsed ["name"] += tmp
+                parsed["name"] += tmp
                 yield parsed
                 tmp = ""
+
 
 if __name__ == '__main__':
     import requests
@@ -98,11 +102,10 @@ if __name__ == '__main__':
     v = Vastavirta()
     r = requests.get(v.url)
 
-    #with open("venues/vastavirta.html") as f:
+    # with open("venues/vastavirta.html") as f:
     #    r = f.read()
 
     for event in v.parseEvents(r.content):
         for k, v in event.items():
             print(f"{k:>10s}: {v}")
         print
-
