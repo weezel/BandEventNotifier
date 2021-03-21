@@ -18,8 +18,7 @@ def load_venue_plugins():
     blocklist = ["plugin_tiketti",
                  "plugin_yotalo",
                  "plugin_glivelabtampere",
-                 "plugin_glivelabhelsinki",
-                 "plugin_nosturi"]
+                 "plugin_glivelabhelsinki"]
     found_blocked = list()
     loadedplugins = list()
     pluginspathabs = os.path.join(os.path.dirname(__file__), "venues")
