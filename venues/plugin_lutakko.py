@@ -6,11 +6,15 @@ import lxml.html
 import re
 import time
 
+from venues.abstract_venue import AbstractVenue
+
 
 class PluginParseError(Exception): pass
 
-class Lutakko(object):
+
+class Lutakko(AbstractVenue):
     def __init__(self):
+        super().__init__()
         self.url = "http://www.jelmu.net/"
         self.name = "Lutakko"
         self.city = "Jyväskylä"
@@ -19,34 +23,18 @@ class Lutakko(object):
         # Parsing patterns
         self.datepat = re.compile("[0-9.]+")
 
-    def getVenueName(self):
-        return self.name
-
-    def getCity(self):
-        return self.city
-
-    def getCountry(self):
-        return self.country
-
-    def eventSQLentity(self):
-        """
-        This method is used to ensure venue exists in venue SQL table.
-        """
-        return { "name" : self.name, \
-                 "city" : self.city, \
-                 "country" : self.country }
-
-    def parsePrice(self, t):
+    def parse_price(self, t):
         tag = " ".join(t.xpath('./div[@role="tickets"]/div/a/strong/text()'))
 
         return "0" if len(tag) == 0 else "%s" % tag
 
-    def parseDate(self, t):
+    def parse_date(self, t):
         month_now = time.strftime("%m")
         year = int(time.strftime("%Y"))
+        date = ""
 
-        tag = " ".join(t.xpath('./div[@class="badges"]'  + \
-                               '/div[@class="date"]'     + \
+        tag = " ".join(t.xpath('./div[@class="badges"]' +
+                               '/div[@class="date"]' +
                                '/span/text()'))
         splt = tag.split(" - ")
         slen = len(splt)
@@ -54,13 +42,8 @@ class Lutakko(object):
             date = " ".join(re.findall(self.datepat, tag))
         # We only care about the starting date
         elif slen > 1:
-            date = " ".join(re.findall(self.datepat, tag))
-            date = re.search(self.datepat, tag)
-            if date:
-                date = date.group()
-            else:
-                return ""
-        date = date.rstrip(".")
+            date = " ".join(re.findall(self.datepat, tag)[0])
+        date = date.rstrip(".")  # FIXME
 
         day, month = date.split(".")
 
@@ -70,30 +53,28 @@ class Lutakko(object):
 
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
-    def parseEvent(self, tag):
-        date = ""
-        title = ""
-        desc = ""
-        price = ""
-
-        date = self.parseDate(tag)
+    def parse_event(self, tag):
+        date = self.parse_date(tag)
         title = tag.xpath('./a')[0].text_content()
         desc = tag.xpath('./p')[0].text_content()
-        price = self.parsePrice(tag)
+        price = self.parse_price(tag)
 
-        name = "%s %s" % (title, desc)
+        name = f"{title} {desc}"
         name = re.sub("\s+", " ", name).lstrip(" ").rstrip(" ")
 
-        return { "venue" : self.getVenueName(), \
-                 "date" : date,                 \
-                 "name" : name,                 \
-                 "price" : price }
+        return {
+            "venue": self.get_venue_name(),
+            "date": date,
+            "name": name,
+            "price": price
+        }
 
-    def parseEvents(self, data):
+    def parse_events(self, data: str):
         doc = lxml.html.fromstring(data)
 
         for event in doc.xpath('//ul[@role="upcoming-events"]/li'):
-            yield self.parseEvent(event)
+            yield self.parse_event(event)
+
 
 if __name__ == '__main__':
     import requests
@@ -101,8 +82,7 @@ if __name__ == '__main__':
     l = Lutakko()
     r = requests.get(l.url)
 
-    for e in l.parseEvents(r.content):
+    for e in l.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
-        print
-
+        print()

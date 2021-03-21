@@ -6,13 +6,18 @@ import lxml.html
 import re
 import time
 
+from venues.abstract_venue import AbstractVenue
 
-class PluginParseError(Exception): pass
 
-class Lepakkomies(object):
+class PluginParseError(Exception):
+    pass
+
+
+class Lepakkomies(AbstractVenue):
     def __init__(self):
         # XXX Apparently they have a Facebook page and then Meteli.
         # Let's rely on the latter one.
+        super().__init__()
         self.url = "http://www.meteli.net/lepakkomies"
         self.name = "Lepakkomies"
         self.city = "Helsinki"
@@ -21,30 +26,14 @@ class Lepakkomies(object):
         # Parsing patterns
         self.monetaryp = re.compile("[0-9]+")
 
-    def getVenueName(self):
-        return self.name
-
-    def getCity(self):
-        return self.city
-
-    def getCountry(self):
-        return self.country
-
-    def eventSQLentity(self):
-        """
-        This method is used to ensure venue exists in venue SQL table.
-        """
-        return { "name" : self.name, \
-                 "city" : self.city, \
-                 "country" : self.country }
-
-    def parsePrice(self, line):
+    def parse_price(self, line):
         tmp = re.search(self.monetaryp, line)
         if tmp:
             price = tmp.group()
-        return "0" if not tmp else "%s€" % price
+            return f"{price}€"
+        return "0"
 
-    def parseDate(self, tag):
+    def parse_date(self, tag: str):
         month_now = time.strftime("%m")
         year = int(time.strftime("%Y"))
 
@@ -58,30 +47,27 @@ class Lepakkomies(object):
 
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
-    def parseEvent(self, tag):
-        date = ""
-        artist = ""
-        price = ""
+    def parse_event(self, tag: lxml.html.HtmlElement):
+        datedata = " ".join(tag.xpath('.//span[contains(@class, ' +
+                                      '"event-date")]/span/text()'))
+        date = self.parse_date(datedata)
+        artist = " ".join(tag.xpath('.//span[contains(@class, ' +
+                                    '"event-info")]/h2/text()'))
+        price = " ".join(tag.xpath('.//span[contains(@class, ' +
+                                   '"price")]/text()'))
 
-        datedata = " ".join(tag.xpath('.//span[contains(@class, ' + \
-                             '"event-date")]/span/text()'))
-        date = self.parseDate(datedata)
-        artist = " ".join(tag.xpath('.//span[contains(@class, ' + \
-                '"event-info")]/h2/text()'))
-        price = " ".join(tag.xpath('.//span[contains(@class, ' + \
-                '"price")]/text()'))
+        return {"venue": self.get_venue_name(),
+                "date": date,
+                "name": f"{artist}",
+                "price": self.parse_price(price)}
 
-        return { "venue" : self.getVenueName(),  \
-                 "date" : date,                  \
-                 "name" : "%s" % (artist),       \
-                 "price" : self.parsePrice(price) }
-
-    def parseEvents(self, data):
+    def parse_events(self, data: str):
         doc = lxml.html.fromstring(data)
         eventtags = doc.xpath('//div[@class="event-list"]')
 
         for et in eventtags:
-            yield self.parseEvent(et)
+            yield self.parse_event(et)
+
 
 if __name__ == '__main__':
     import requests
@@ -89,8 +75,7 @@ if __name__ == '__main__':
     k = Lepakkomies()
     r = requests.get(k.url)
 
-    for e in k.parseEvents(r.content):
+    for e in k.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
-        print
-
+        print()

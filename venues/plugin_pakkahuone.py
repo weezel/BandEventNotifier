@@ -4,34 +4,21 @@
 import datetime
 import json
 import re
-import time
+from typing import Any, Dict, Generator
+
+from venues.abstract_venue import AbstractVenue
 
 
 class PluginParseError(Exception): pass
 
-class Pakkahuone(object):
+
+class Pakkahuone(AbstractVenue):
     def __init__(self):
+        super().__init__()
         self.url = "http://www.tullikamari.net/fi/tapahtumat"
         self.name = "Pakkahuone"
         self.city = "Tampere"
         self.country = "Finland"
-
-    def getVenueName(self):
-        return self.name
-
-    def getCity(self):
-        return self.city
-
-    def getCountry(self):
-        return self.country
-
-    def eventSQLentity(self):
-        """
-        This method is used to ensure venue exists in venue SQL table.
-        """
-        return { "name" : self.name, \
-                 "city" : self.city, \
-                 "country" : self.country }
 
     def parseDateFromEpoc(self, date):
         return datetime.datetime.fromtimestamp(date).strftime("%Y-%m-%d")
@@ -45,33 +32,34 @@ class Pakkahuone(object):
         from_door = e["hinta"] if e["hinta"] is not None else 0
         return "{}/{}€".format(e["ennakkolipun_hinta"], from_door)
 
-    def parseEvent(self, e):
+    def parse_event(self, e):
         date = self.parseDateFromEpoc(int(e["aika_alku"]))
         title = e["otsikko"].rstrip(":")
         artist = self.parseArtists(e["artistit"])
         desc = json.loads(e["kuvaus"]).get("summary")
         price = self.parsePrice(e)
 
-        return { "venue" : self.getVenueName(),
-                 "date" : date,
-                 "name" : re.sub("\s+", " ", f"{title}: {artist} {desc}"),
-                 "price" : price }
+        return {"venue": self.get_venue_name(),
+                "date": date,
+                "name": re.sub("\s+", " ", f"{title}: {artist} {desc}"),
+                "price": price}
 
-    def parseEvents(self, json_data):
+    def parse_events(self, json_data: bytes) -> Generator[Dict[str, Any], None, None]:
         events_line_pattern = re.compile(r"^\s+\$scope.events = ")
         events = None
         for line in json_data.decode("utf-8").split("\n"):
             if re.search(events_line_pattern, line):
                 events = line
                 break
-        if events == None:
+        if events is None:
             raise PluginParseError("Parsing Klubi failed")
         normalized = re.sub(events_line_pattern, "", events).rstrip(";\r")
         doc = json.loads(normalized)
 
         for e in doc:
             if e["tila"] == "Pakkahuone":
-                yield self.parseEvent(e)
+                yield self.parse_event(e)
+
 
 if __name__ == '__main__':
     import requests
@@ -79,8 +67,7 @@ if __name__ == '__main__':
     p = Pakkahuone()
     r = requests.get(p.url)
 
-    for e in p.parseEvents(r.content):
+    for e in p.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
-        print
-
+        print()

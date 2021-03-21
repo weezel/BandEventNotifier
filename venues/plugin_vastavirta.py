@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
+from typing import Any, Dict, Generator
 
 import lxml.html
-import re
+
+from venues.abstract_venue import AbstractVenue
 
 
-class Vastavirta(object):
+class Vastavirta(AbstractVenue):
     def __init__(self):
-        self.data = None
-
+        super().__init__()
         self.url = "http://vastavirta.net/fi/"
         self.name = "Vastavirta"
         self.city = "Tampere"
@@ -25,32 +26,16 @@ class Vastavirta(object):
             "Syys": 9,
             "Loka": 10,
             "Marras": 11,
-            "Joulu": 12}
+            "Joulu": 12
+        }
 
-    def getVenueName(self):
-        return self.name
-
-    def getCity(self):
-        return self.city
-
-    def getCountry(self):
-        return self.country
-
-    def eventSQLentity(self):
-        return {"name": self.name,
-                "city": self.city,
-                "country": self.country}
-
-    def parsePrice(self, tag):
+    def parse_price(self, tag: lxml.html.HtmlElement) -> str:
         parsedprice = tag.xpath('.//div[@class="event-details"]/*/text()')
         prices = " ".join(parsedprice)
 
-        if prices:
-            return "%s" % (prices)
-        else:
-            return "0"
+        return f"{prices}" if prices else "0"
 
-    def parseDate(self, tag):
+    def parse_date(self, tag: lxml.html.HtmlElement) -> str:
         day = tag.xpath('./*/div[@class="start-date"]/div[@class="event-day"]/text()')
         m = tag.xpath('./*/div[@class="start-date"]/div[@class="event-month"]/text()')
         year = tag.xpath('./*/div[@class="start-date"]/div[@class="event-year"]/text()')
@@ -68,25 +53,26 @@ class Vastavirta(object):
         month = self.monthmap[month]
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
-    def parseEvent(self, event):
-        date = self.parseDate(event)
+    def parse_event(self, event: lxml.html.HtmlElement) -> Dict[str, Any]:
+        date = self.parse_date(event)
         etitle = " ".join(event.xpath('./*/div[@class="event-title"]/*/text()'))
-        prices = self.parsePrice(event)
+        prices = self.parse_price(event)
 
-        return {"venue": self.getVenueName(),
+        return {"venue": self.get_venue_name(),
                 "date": date,
                 "name": etitle,
                 "price": prices}
 
-    def parseEvents(self, data):
+    def parse_events(self, data) \
+            -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data).getroottree().getroot()
-        tags = doc.xpath('//div[@class="event-list"]/ul' \
-                         + '[@class="event-list-view"]' \
+        tags = doc.xpath('//div[@class="event-list"]/ul'
+                         + '[@class="event-list-view"]'
                          + '/li[@class="event "]')
         tmp = ""
 
         for event in reversed(tags):
-            parsed = self.parseEvent(event)
+            parsed = self.parse_event(event)
 
             if parsed["date"] == "":
                 tmp += ", " + parsed["name"]
@@ -105,7 +91,7 @@ if __name__ == '__main__':
     # with open("venues/vastavirta.html") as f:
     #    r = f.read()
 
-    for event in v.parseEvents(r.content):
+    for event in v.parse_events(r.content):
         for k, v in event.items():
             print(f"{k:>10s}: {v}")
-        print
+        print()

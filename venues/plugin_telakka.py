@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import datetime
+import re
+from typing import Any, Dict, Generator
+
 import lxml.html
 
-import re
-import time
-import datetime
+from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception): pass
-
-class Telakka(object):
+class Telakka(AbstractVenue):
     def __init__(self):
+        super().__init__()
         self.url = "http://www.telakka.eu/ravintola/ohjelma"
         self.name = "Telakka"
         self.city = "Tampere"
@@ -21,24 +22,7 @@ class Telakka(object):
         self.pat_date = re.compile("[0-9]+.[0-9]+.")
         self.monetary = re.compile("[0-9,]+[ ]?€")
 
-    def getVenueName(self):
-        return self.name
-
-    def getCity(self):
-        return self.city
-
-    def getCountry(self):
-        return self.country
-
-    def eventSQLentity(self):
-        """
-        This method is used to ensure venue exists in venue SQL table.
-        """
-        return { "name" : self.name, \
-                 "city" : self.city, \
-                 "country" : self.country }
-
-    def parsePrice(self, elem):
+    def parse_price(self, elem: str) -> str:
         if elem == '':
             return '0 €'
 
@@ -47,8 +31,7 @@ class Telakka(object):
             return "0 €"
         return "".join(prices.group())
 
-    def parseDate(self, elem):
-        parsed_date = ""
+    def parse_date(self, elem: lxml.html.HtmlElement):
         date_now = datetime.datetime.now()
 
         try:
@@ -62,17 +45,18 @@ class Telakka(object):
         except Exception:
             return ""
 
-    def parseEvents(self, data):
+    def parse_events(self, data: bytes) \
+            -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)
 
         for et in doc.xpath('//div[@class="entry-content"]/p/span[@style="color: #ff6600;"]'):
-            event_date = self.parseDate(et)
+            event_date = self.parse_date(et)
             if event_date is None:
                 continue
 
             tmp = "".join(et.xpath("../text()")).replace("\r\n", " ")
             event = re.sub("\s+", " ", tmp).strip()
-            price = self.parsePrice(event)
+            price = self.parse_price(event)
 
             tmp = "".join(et.xpath('../strong/text()')).replace("\r\n", " ")
             has_title = re.sub("\s+", " ", tmp).strip()
@@ -82,10 +66,10 @@ class Telakka(object):
             else:
                 ename = event
 
-            yield { "venue" : self.getVenueName(),
-                    "date" : event_date,
-                    "name" : ename,
-                    "price" : price }
+            yield {"venue": self.get_venue_name(),
+                   "date": event_date,
+                   "name": ename,
+                   "price": price}
 
 
 if __name__ == '__main__':
@@ -94,8 +78,7 @@ if __name__ == '__main__':
     p = Telakka()
     r = requests.get(p.url)
 
-    for e in p.parseEvents(r.content):
+    for e in p.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
-        print
-
+        print()

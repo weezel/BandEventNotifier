@@ -1,52 +1,40 @@
 #!/usr/bin/env python3
+from typing import Any, Dict, Generator
 
 from lxml import html
 
 import time
 import re
 
+from venues.abstract_venue import AbstractVenue
+
+
 class PluginParseError(Exception): pass
 
-class Yotalo(object):
+
+class Yotalo(AbstractVenue):
     def __init__(self):
+        super().__init__()
         self.url = "http://www.yo-talo.fi"
         self.name = "Yo-talo"
         self.city = "Tampere"
         self.country = "Finland"
-        self.parseddata = None
 
         # Parsing patterns
         self.datestartpat = re.compile(" \d+\.\d+.$")
         self.monetarypattern = re.compile("[0-9.,]+([ ])?e(uroa)?")
 
-    def getVenueName(self):
-        return self.name
-
-    def getCity(self):
-        return self.city
-
-    def getCountry(self):
-        return self.country
-
-    def eventSQLentity(self):
-        """
-        This method is used to ensure venue exists in venue SQL table.
-        """
-        return { "name" : self.name, \
-                 "city" : self.city, \
-                 "country" : self.country }
-
-    def parsePrice(self, line):
+    def parse_price(self, line: str) -> str:
         # FIXME Regexp is broken, fit it at some point
         # Spotted at these possible monetary variations:
         #   12 euroa
         #   12e
         #   12 EUROA
         #   12 Euroa
-        prices = re.findall("[0-9.,]+([ ]) e(uroa)?", line, flags=re.IGNORECASE)
-        return "{} €".format("/".join(prices))
+        prices = re.findall("[0-9.,]+ ?e(uroa)?", line, flags=re.IGNORECASE)
+        return "{}€".format("/".join(prices))
 
-    def parseDate(self, line):
+    def parse_date(self, line: str) -> str:
         year = int(time.strftime("%Y"))
         month_now = time.strftime("%m")
 
@@ -67,12 +55,10 @@ class Yotalo(object):
 
         return "{:4d}-{:2d}-{:2d}".format(year, int(month), int(day))
 
-    def parseEvent(self, tag):
-        date = ""
-        title = ""
+    def parse_event(self, tag) -> Dict[str, Any]:
         desc = ""
 
-        date = self.parseDate(tag.xpath('./div[@class="item_left"]/text()'))
+        date = self.parse_date(tag.xpath('./div[@class="item_left"]/text()'))
         title = " ".join(tag.xpath('./div[@class="item_center"]/h3/a/text()'))
         for a in tag.xpath('./div[@class="item_center"]/p'):
             desc += " " + " ".join(a.xpath('./*/text()'))
@@ -80,19 +66,19 @@ class Yotalo(object):
         desc = desc.lstrip(" ").rstrip(" ")
         name = "%s - %s" % (title, desc)
         name = re.sub("\s+", " ", name)
-        price = self.parsePrice(name)
+        price = self.parse_price(name)
 
-        return { "venue" : self.getVenueName(), \
-                 "date" : date, \
-                 "name" : name, \
-                 "price" : price }
+        return {"venue": self.get_venue_name(),
+                "date": date,
+                "name": name,
+                "price": price}
 
-    def parseEvents(self, data):
-        #doc = parse("venues/doggari.html").getroot()
+    def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
         doc = html.fromstring(data)
 
         for item in doc.xpath('//div[@id="left"]/div[@class="item"]'):
-            yield self.parseEvent(item)
+            yield self.parse_event(item)
+
 
 if __name__ == '__main__':
     import requests
@@ -100,8 +86,7 @@ if __name__ == '__main__':
     y = Yotalo()
     r = requests.get(y.url)
 
-    for e in y.parseEvents(r.content):
+    for e in y.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
-        print
-
+        print()
