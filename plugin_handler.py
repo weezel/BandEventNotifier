@@ -25,7 +25,7 @@ def load_venue_plugins():
 
     for loader, plugname, ispkg in \
             pkgutil.iter_modules(path=[pluginspathabs]):
-        if plugname in sys.modules:
+        if plugname in sys.modules or plugname == "abstract_venue":
             continue
         if plugname in blocklist:
             found_blocked.append(plugname.lstrip("plugin_"))
