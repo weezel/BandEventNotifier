@@ -2,27 +2,32 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import glob
 import os
-import requests
 import signal
 import sys
 import threading
 import time
 from queue import Queue
 
+import requests
+
 import dbengine
-from plugin_handler import load_venue_plugins
-from lastfmfetch import LastFmRetriever
 import utils
+from lastfmfetch import LastFmRetriever
+from plugin_handler import load_venue_plugins
+from venues.abstract_venue import AbstractVenue
 
 MAX_THREADS = 20
 MIN_PLAYCOUNT = 9
 
 
-def signal_handler(signal, frame):
+def signal_handler(signal_num: int, frame):
     print("Aborting...")
     sys.exit(1)
+
+
+venues_lock = threading.Lock()
+parsed_venues_data = dict()
 
 
 class Fetcher(threading.Thread):
@@ -33,51 +38,55 @@ class Fetcher(threading.Thread):
 
         self.__db_init(dbeng)
 
-    def __db_init(self, dbobj) -> None:
+    def __db_init(self, dbobj: dbengine.DBEngine) -> None:
         if self.dbeng is None:
             self.dbeng = dbobj
 
     def run(self) -> None:
+        global parsed_venues_data, venues_lock
+
         while True:
             venue = self.fetchqueue.get()
-            print(f"[+] Fetching and parsing venue '{venue.name}'")
-            venuehtml = self.__fetch(venue)
+            print(f"[+] Fetching and parsing venue '{venue.get_venue_name()}'")
+            venuehtml = self._fetch(venue)
 
             if venuehtml == "":
                 self.fetchqueue.task_done()
 
-            venueparsed = list()
             try:
-                for i in venue.parseEvents(venuehtml):
-                    if i is None or len(i) == 0:
-                        print(f"Couldn't parse venue: {venue.getVenueName()}")
+                for parsed_venue in venue.parse_events(venuehtml):
+                    if parsed_venue is None or len(parsed_venue) == 0:
+                        print(f"Couldn't parse venue: {venue.get_venue_name()}")
                         self.fetchqueue.task_done()
                         return
-                    venueparsed.append(i)
+                    with venues_lock:
+                        if venue.url not in parsed_venues_data:
+                            parsed_venues_data[venue.url] = []
+                        parsed_venues_data[venue.url].append(parsed_venue)
             except TypeError as te:
-                print("{} Error while parsing {}venue".format(
-                    utils.colorize("/_!_\\", "red"),
-                    venue.getVenueName()))
+                print("{warn} Error while parsing {venue_name} venue: {err}".format(
+                    warn=utils.colorize("/_!_\\", "red"),
+                    venue_name=venue.get_venue_name(),
+                    err=te))
                 self.fetchqueue.task_done()
                 return
 
-            venue.parseddata = venueparsed
             self.fetchqueue.task_done()
 
     # FIXME Add type
-    def __fetch(self, venue) -> str:
+    def _fetch(self, venue: AbstractVenue) -> bytes:
         retries = 3
         sleeptimesec = 5.0
         try:
             r = requests.get(venue.url)
         except Exception as general_err:
             print(f"ERROR: {general_err}")
-            return ""
+            return bytes("")
 
         # TODO Check r.ok
         if r.status_code == 404:
             print(f"{venue.url} is broken, please fix it.")
-            return ""
+            return bytes("")
         elif r.status_code != 200:
             for retry in range(0, retries):
                 print(f"Couldn't connect {venue.name}[{venue.city}] {venue.url}, ", end="")
@@ -127,7 +136,7 @@ def main() -> None:
                 dbeng.insertLastFMartists(artist, playcount)
             print("[=] LastFM data fetched.")
         elif sys.argv[2] == "venues":
-            print("[+] Fetching venues data.")
+            print("[+] Fetching venues events.")
             fetchqueue = Queue()
             venues = load_venue_plugins()
             for v in range(MAX_THREADS):
@@ -137,14 +146,19 @@ def main() -> None:
             for venue in venues:
                 fetchqueue.put(venue)
             fetchqueue.join()
-            print("[=] Venues data fetched.")
+            print("[=] Venues events fetched.")
 
             print("[+] Inserting into a database...")
-            dbeng.pluginCreateVenueEntity(venue.eventSQLentity())
+            for v in venues:
+                # Add database entries for the venue
+                dbeng.pluginCreateVenueEntity(v.event_sqlentity())
 
-            for v in venue.parseddata:
-                dbeng.insertVenueEvents(v)
-            print("[=] Venues added into the database.")
+                if v.url not in parsed_venues_data:
+                    print(f"Cannot add data for {v.name}/{v.city} ({v.country}) because it's empty. Continuing...")
+                    continue
+                parsed_venue = parsed_venues_data[v.url]
+                dbeng.insertVenueEvents(v, parsed_venue)
+            print("[=] Venues events added into the database.")
         else:
             usage()
     elif sys.argv[1] == "gigs":

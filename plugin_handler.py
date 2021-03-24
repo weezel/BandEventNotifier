@@ -8,9 +8,12 @@
 import os
 import pkgutil
 import sys
+from typing import List
+
+from venues.abstract_venue import AbstractVenue
 
 
-def load_venue_plugins():
+def load_venue_plugins() -> List[AbstractVenue]:
     """
     Read plugin directory and load found plugins.
     Variable "blocklist" can be used to exclude loading certain plugins.
@@ -31,7 +34,7 @@ def load_venue_plugins():
             found_blocked.append(plugname.lstrip("plugin_"))
             continue
 
-        plugpath = "venues.%s" % (plugname)
+        plugpath = f"venues.{plugname}"
         loadplug = __import__(plugpath, fromlist=[plugname])
 
         classname = plugname.split("_")[1].title()
@@ -39,10 +42,6 @@ def load_venue_plugins():
 
         instance = loadedclass()
         loadedplugins.append(instance)
-        print(f"Loaded plugin: {instance.getVenueName()}")
+        print(f"Loaded plugin: {instance.get_venue_name()}")
     print("Blocked plugins: {}.\n".format(", ".join(found_blocked[1:])))
     return loadedplugins
-
-
-if __name__ == '__main__':
-    load_venue_plugins()

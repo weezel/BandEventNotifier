@@ -3,7 +3,9 @@
 
 import sqlite3
 import threading
-from typing import Dict, Generator
+from typing import Any, Dict, Generator, Type
+
+from venues.abstract_venue import AbstractVenue, IncorrectVenueImplementation
 
 dbname = "bandevents.db"
 
@@ -33,11 +35,9 @@ class DBEngine(object):
             self.conn = sqlite3.connect(dbname)
 
     def close(self) -> None:
-        while True:
-            with self.lock:
-                if self.conn:
-                    self.conn.close()
-                break
+        with self.lock:
+            if self.conn:
+                self.conn.close()
 
     def pluginCreateVenueEntity(self, venue: Dict[str, str]) -> None:
         """
@@ -49,59 +49,56 @@ class DBEngine(object):
         placeholders = ":" + ", :".join(venue.keys())
         q = "INSERT OR IGNORE INTO venue (%s) VALUES (%s);" \
             % (cols, placeholders)
-        while True:
-            with self.lock:
-                cur = None
-                try:
-                    cur = self.conn.cursor()
-                    cur.execute(q, venue)
-                    self.conn.commit()
-                except Exception as e:
-                    print(f"Failed with error message: {e}")
-                finally:
-                    cur.close()
-                    break
+        with self.lock:
+            cur = None
+            try:
+                cur = self.conn.cursor()
+                cur.execute(q, venue)
+                self.conn.commit()
+            except Exception as e:
+                print(f"Failed with error message: {e}")
+            finally:
+                cur.close()
 
-    # FIXME Create a proper venue interface
-    def insertVenueEvents(self, venue) -> None:
+    def insertVenueEvents(self, venue: AbstractVenue, events: Dict[str, Any]) -> None:
         """
         Insert parsed events from a venue into the database.
         """
-        while True:
-            with self.lock:
-                # Replace venue by venueid
-                venue["venueid"] = self.getVenueByName(venue["venue"])[0]
-                # TODO Why do we have this keyword in the dict in general...
-                venue.pop("venue")  # No such column in SQL db
-                cols = ", ".join(venue.keys())
-                placeholders = ":" + ", :".join(venue.keys())
-                q = "INSERT OR IGNORE INTO event (%s) VALUES (%s);" \
-                    % (cols, placeholders)
-                cur = None
-                try:
-                    cur = self.conn.cursor()
-                    cur.execute(q, venue)
-                    self.conn.commit()
-                except Exception as e:
-                    print(f"Failed with error message: {e}")
-                finally:
-                    cur.close()
-                    break
+        with self.lock:
+            cur = None
+            try:
+                cur = self.conn.cursor()
+
+                for event in events:
+                    venue_id = self.getVenueByName(
+                        event["venue"],
+                        venue.get_city(),
+                        venue.get_country())[0]
+                    event["venueid"] = venue_id
+                    event.pop("venue")  # venue -> venueid to match sql implementation
+                    cols = ", ".join(event.keys())
+                    placeholders = ":" + ", :".join(event.keys())
+                    q = f"INSERT OR IGNORE INTO event ({cols}) VALUES ({placeholders});"
+
+                    cur.execute(q, event)
+            except Exception as e:
+                print(f"Failed with error message: {e}")
+            finally:
+                self.conn.commit()
+                cur.close()
 
     def insertLastFMartists(self, artist: str, playcount: int) -> None:
         q = "INSERT OR REPLACE INTO artist (name, playcount) VALUES (?, ?);"
-        while True:
-            with self.lock:
-                cur = None
-                try:
-                    cur = self.conn.cursor()
-                    cur.execute(q, [artist, playcount])
-                    self.conn.commit()
-                except Exception as e:
-                    print(f"Failed with error message: {e}")
-                finally:
-                    cur.close()
-                    break
+        with self.lock:
+            cur = None
+            try:
+                cur = self.conn.cursor()
+                cur.execute(q, [artist, playcount])
+                self.conn.commit()
+            except Exception as e:
+                print(f"Failed with error message: {e}")
+            finally:
+                cur.close()
 
     def getVenues(self) -> Dict[str, str]:
         q = "SELECT id, name, city, country FROM venue"
@@ -118,14 +115,14 @@ class DBEngine(object):
 
         return results
 
-    def getVenueByName(self, vname: str) -> str:
+    def getVenueByName(self, vname: str, city: str, country: str) -> str:
         q = "SELECT id, name, city, country FROM venue " \
-            + "WHERE name = ? LIMIT 1;"
+            + "WHERE name = ? AND city = ? AND country = ? LIMIT 1;"
         venue_name = str()
         cur = None
         try:
             cur = self.conn.cursor()
-            results = cur.execute(q, [vname])
+            results = cur.execute(q, [vname, city, country])
             venue_name = results.fetchone()
         except Exception as e:
             print(f"Failed with error message: {e}")
@@ -183,15 +180,13 @@ class DBEngine(object):
     def purgeOldEvents(self) -> None:
         q = "DELETE FROM event " \
             + "WHERE strftime('%Y-%m-%d', date) < date('now');"
-        while True:
-            with self.lock:
-                cur = None
-                try:
-                    cur = self.conn.cursor()
-                    cur.execute(q)
-                    self.conn.commit()
-                except Exception as e:
-                    print(f"Failed with error message: {e}")
-                finally:
-                    cur.close()
-                    break
+        with self.lock:
+            cur = None
+            try:
+                cur = self.conn.cursor()
+                cur.execute(q)
+                self.conn.commit()
+            except Exception as e:
+                print(f"Failed with error message: {e}")
+            finally:
+                cur.close()
