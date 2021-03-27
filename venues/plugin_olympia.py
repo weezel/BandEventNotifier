@@ -8,7 +8,8 @@ import lxml.html
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception): pass
+class PluginParseError(Exception):
+    pass
 
 
 class Olympia(AbstractVenue):
@@ -20,58 +21,63 @@ class Olympia(AbstractVenue):
         self.country = "Finland"
 
         # Parsing patterns
-        self.datepat = re.compile("[0-9.]+")
-        self.monetary = re.compile("[0-9]+(\s+)?€")
+        self.datepat = re.compile("[0-9.]{1,2}\.[0-9]{1,2}\.[0-9]{4}")
+        self.pricepat_monetary = re.compile("[0-9,]+.€")
+        self.pricepat_plain = re.compile("[0-9,]+")
 
-    def parse_price(self, t):
-        # XXX Fix this
-        return 0
-        # tag = t.xpath('./div[2]/strong/text()')
+    def parse_price(self, info_tag: str) -> str:
+        prices_with_mon = self.pricepat_monetary.findall(info_tag)
+        prices = []
+        for price in prices_with_mon:
+            parsed_price = self.pricepat_plain.findall(price)
+            if len(parsed_price) == 0:
+                continue
+            prices.append("".join(parsed_price))
 
-        # foundprice = re.findall(self.monetary, " ".join(tag))
+        if len(prices) == 0:
+            return "0€"
+        elif len(prices) == 2:
+            in_advance, from_door = prices[0], prices[1]
+            return f"{in_advance}€/{from_door}€"
+        return "{}€".format("".join(prices))
 
-        # if foundprice is None:
-        #    foundprice = ""
+    def parse_date(self, tag: lxml.html.HtmlElement) -> str:
+        pvm_tag = tag.xpath('./div[contains(@class, "pvm")]')[0].text_content()
+        if (parsed_pvm := self.datepat.search(pvm_tag)) is not None:
+            day, month, year = parsed_pvm.group().split(".")
+            day = int(day)
+            month = int(month)
+            year = int(year)
+            return f"{year:04d}-{month:02d}-{day:02d}"
 
-        # return "0" if len(foundprice) == 0 else "%s" % (foundprice[0])
+        return ""
 
-    def parse_date(self, t):
-        tag = t.xpath('./div[2]/text()')
+    def parse_event(self, tag: lxml.html.HtmlElement) -> str:
+        info_tag = tag.xpath('./div[contains(@class, "infot")]')[0].text_content()
+        info_tag = re.sub("\s+", " ", info_tag).lstrip(" ").rstrip(" ")
+        return info_tag
 
-        if tag:
-            tag = " ".join(tag)
-            tag = re.sub("\s+", " ", tag).lstrip(" ").rstrip(" ")
-
-        founddate = re.search(self.datepat, tag)
-
-        if founddate is None:
-            return ""
-
-        day, month, year = founddate.group().split(".")
-        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
-
-    def parse_events(self, data: str):
+    def parse_events(self, data: bytes):
         doc = lxml.html.fromstring(data)
 
-        for event in doc.xpath('//div[contains(@class, "keikkalista")]/div'):
-            name = "".join(event.xpath("./div/h3/text()"))
-            name = re.sub("\s+", " ", name).lstrip(" ").rstrip(" ")
+        for event in doc.xpath('/html[@class="no-js"]/body//div[contains(@class, "keikka")]'):
             date = self.parse_date(event)
-            price = self.parse_price(event)
+            event_info = self.parse_event(event)
+            price = self.parse_price(event_info)
 
             yield {"venue": self.get_venue_name(),
                    "date": date,
-                   "name": name,
+                   "name": event_info,
                    "price": price}
 
 
 if __name__ == '__main__':
     import requests
 
-    l = Olympia()
-    r = requests.get(l.url)
+    olympia = Olympia()
+    r = requests.get(olympia.url)
 
-    for e in l.parse_events(r.content):
+    for e in olympia.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
         print()
