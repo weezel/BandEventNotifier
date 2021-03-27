@@ -63,7 +63,7 @@ class Vastavirta(AbstractVenue):
                 "name": etitle,
                 "price": prices}
 
-    def parse_events(self, data) \
+    def parse_events(self, data: bytes) \
             -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data).getroottree().getroot()
         tags = doc.xpath('//div[@class="event-list"]/ul'
