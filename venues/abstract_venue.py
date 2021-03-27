@@ -28,6 +28,11 @@ class AbstractVenue(ABC):
                 "city": self.city,
                 "country": self.country}
 
+    # FIXME Proper class type checking
+    def __eq__(self, other):
+        return hasattr(other, "url") \
+               and other.url == self.url
+
     @abstractmethod
     def parse_events(self, data: Any) \
             -> Generator[Dict[str, Any], None, None]:
