@@ -1,74 +1,69 @@
 #!/usr/bin/env python3
 
-import datetime
 import re
-from typing import Any, Dict, Generator
+import time
+from typing import Any, Dict, Generator, List
 
 import lxml.html
+import requests
 
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception): pass
+class PluginParseError(Exception):
+    pass
 
 
 class Glivelabtampere(AbstractVenue):
     def __init__(self):
         super().__init__()
-        self.url = "https://www.glivelab.fi/tampere/"
+        self.url = "https://www.glivelab.fi/tampere/#events&show_all=1"
         self.name = "G Livelab Tampere"
         self.city = "Tampere"
         self.country = "Finland"
 
-    def parse_date(self, tag: str):
-        year = datetime.datetime.now().year
-        day, month, _ = tag.split(".")
+    def parse_date(self, date: List[str]) -> str:
+        year = int(time.strftime("%Y"))
+        this_month = int(time.strftime("%m"))
+        date_column = "".join(date)
+        date_column = self.normalize_string(date_column)
+        day, month = date_column.rstrip(".").split(".")
+        day, month = int(day), int(month)
+        # Year wrapped
+        if month < this_month:
+            year += 1
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
     def normalize_string(self, s: str):
-        rm_spaces = re.sub("\+s", " ", s)
+        rm_newlines = s.replace("\n", " ")
+        rm_spaces = re.sub("\s+", " ", rm_newlines)
         rm_left_padding = re.sub("^\s+", "", rm_spaces)
         rm_right_padding = re.sub("\s+$", "", rm_left_padding)
         return rm_right_padding
 
     def parse_event(self, tag: lxml.html.HtmlElement) \
             -> Dict[str, Any]:
-        for node in tag:
-            # XXX I have no idea why the xpath mentioned in parseEvents()
-            # doesn't work as intended. I cannot see two 'div' child nodes with
-            # 'a' as a parent as I would expect.
-            #
-            # Hence, go back one node and list all of it's descendants.
-            prev_nodes = node.xpath('../*')
-            if len(prev_nodes) != 2:
-                raise PluginParseError("Failed to parse GliveLab Tampere")
-            # First node is "img-wrapper" which we are not interested
-            title = " ".join(prev_nodes[1].xpath('./div/h2/text()'))
-            title = self.normalize_string(title)
-            date = " ".join(prev_nodes[1].xpath('./div/div[@class="date"]/text()'))
-            date = self.parse_date(self.normalize_string(date))
-            time = " ".join(prev_nodes[1].xpath('./div/div[@class="time"]/text()'))
-            time = self.normalize_string(time)
+        date = self.parse_date(tag.xpath('./div[@class="datetime"]/div[@class="date"]/text()'))
+        event_description = " ".join(tag.xpath('./div[@class="title-description"]/h2[@class="title"]/text()'))
+        event_description = self.normalize_string(event_description)
+        price = "0€"
 
-            price = "0€"
-
-            return {"venue": self.get_venue_name(),
-                    "date": date,
-                    "name": title,
-                    "price": price}
+        return {"venue": self.get_venue_name(),
+                "date": date,
+                "name": event_description,
+                "price": price}
 
     def parse_events(self, data: bytes) \
             -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)
-        eventtags = doc.xpath('//li[@class="item"]/a')
+        eventtags = doc.xpath('/html/body/div[@id="page"]/div[@id="main"]/article[@class="page"]/article'
+                              '//ul[@class="listing"]/li[@class="item"]/a/div[@class="info"]')
 
         for et in eventtags:
             yield self.parse_event(et)
 
 
 if __name__ == '__main__':
-    import requests
-
     g = Glivelabtampere()
     r = requests.get(g.url)
 
