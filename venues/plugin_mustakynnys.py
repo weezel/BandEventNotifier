@@ -9,9 +9,6 @@ import lxml.html
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception): pass
-
-
 class Mustakynnys(AbstractVenue):
     def __init__(self):
         super().__init__()
@@ -24,17 +21,6 @@ class Mustakynnys(AbstractVenue):
         self.datepat = re.compile("[0-9.]+")
         self.monetary = re.compile("[0-9]+(\s+)?€")
 
-    def parse_price(self, t: lxml.html.HtmlElement) -> str:
-        # TODO Broken, fix it
-        tag = t.xpath('./text()')
-
-        foundprice = re.search(self.monetary, " ".join(tag))
-
-        if foundprice is None:
-            foundprice = ""
-
-        return "0" if len(foundprice) == 0 else f"{foundprice.strip(' ')}"
-
     def parse_date(self, t: lxml.html.HtmlElement) -> str:
         tag = t.xpath('./text()')
 
@@ -44,17 +30,15 @@ class Mustakynnys(AbstractVenue):
             return ""
 
         day, month, year = founddate.group().split(".")
-        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+        return f"{year:04d}-{month:02d}-{day:02d}"
 
-    def parse_events(self, data: str) \
+    def parse_events(self, data: bytes) \
             -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)
-        date = ""
         name = ""
-        price = ""
 
         for event in reversed(doc.xpath('//div[@id="boxleft"]/p[@class="pvm" '
-                                        + 'or @class="keikka"]')):
+                                        'or @class="keikka"]')):
             # Price is also included under the pvm tag
             if event.get("class") == "pvm":
                 date = self.parse_date(event)
