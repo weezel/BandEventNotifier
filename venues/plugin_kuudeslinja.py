@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import re
 import time
 from typing import Any, Dict, Generator, List
 
@@ -22,16 +21,16 @@ class Kuudeslinja(AbstractVenue):
         self.country = "Finland"
 
     def parse_date(self, date_tag: List[str]) -> str:
-        this_year = int(time.strftime("%Y"))
+        year = int(time.strftime("%Y"))
         this_month = int(time.strftime("%m"))
         date_column = "".join(date_tag).split(" ")[-1]
         day, month, _ = date_column.split(sep=".", maxsplit=2)
         day, month = int(day), int(month)
         # Year wrapped
         if month < this_month:
-            this_year += 1
+            year += 1
 
-        return f"{this_year:04d}-{month:02d}-{day:02d}"
+        return f"{year:04d}-{month:02d}-{day:02d}"
 
     def parse_event(self, tag: lxml.html.HtmlElement) \
             -> Dict[str, Any]:
