@@ -1,82 +1,91 @@
 #!/usr/bin/env python3
+import re
 from typing import Any, Dict, Generator
 
-from lxml import html
-
-import time
-import re
+import lxml.html
 
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception): pass
+class PluginParseError(Exception):
+    pass
 
 
 class Yotalo(AbstractVenue):
     def __init__(self):
         super().__init__()
-        self.url = "http://www.yo-talo.fi"
+        self.url = "https://yo-talo.fi/ohjelma/"
         self.name = "Yo-talo"
         self.city = "Tampere"
         self.country = "Finland"
 
-        # Parsing patterns
-        self.datestartpat = re.compile(" \d+\.\d+.$")
-        self.monetarypattern = re.compile("[0-9.,]+([ ])?e(uroa)?")
+    def normalize_string(self, s: str):
+        rm_newlines = s.replace("\n", " ")
+        rm_spaces = re.sub("\s+", " ", rm_newlines)
+        rm_left_padding = re.sub("^\s+", "", rm_spaces)
+        rm_right_padding = re.sub("\s+$", "", rm_left_padding)
+        return rm_right_padding
 
-    def parse_price(self, line: str) -> str:
-        # FIXME Regexp is broken, fit it at some point
-        # Spotted at these possible monetary variations:
-        #   12 euroa
-        #   12e
-        #   12 EUROA
-        #   12 Euroa
-        prices = re.findall("[0-9.,]+ ?e(uroa)?", line, flags=re.IGNORECASE)
-        return "{}€".format("/".join(prices))
+    def month_to_number(self, month: str) -> int:
+        if month == "tammi":
+            return 1
+        elif month == "helmi":
+            return 2
+        elif month == "maalis":
+            return 3
+        elif month == "huhti":
+            return 4
+        elif month == "touko":
+            return 5
+        elif month == "kesä":
+            return 6
+        elif month == "heinä":
+            return 7
+        elif month == "elo":
+            return 8
+        elif month == "syys":
+            return 9
+        elif month == "loka":
+            return 10
+        elif month == "marras":
+            return 11
+        elif month == "joulu":
+            return 12
 
-    def parse_date(self, line: str) -> str:
-        year = int(time.strftime("%Y"))
-        month_now = time.strftime("%m")
+        raise ValueError(f"Month mapping for '{month}' not implemented")
 
-        if line is None:
-            return ""
+    def parse_date(self, tag: lxml.html.HtmlElement) -> str:
+        day = "".join(tag[0].xpath('./div[@class="event-day"]/text()'))
+        day = int(day)
+        month = "".join(tag[0].xpath('./div[@class="event-month"]/text()'))
+        month = self.month_to_number(month)
+        year = "".join(tag[0].xpath('./div[@class="event-year"]/text()'))
+        year = int(year)
+        return f"{year:04d}-{month:02d}-{day:02d}"
 
-        date = re.search(self.datestartpat, " ".join(line))
-        if date is None:
-            return ""
+    def parse_info(self, event: lxml.html.HtmlElement) -> str:
+        title = "".join(event[0].xpath('./div[@class="event-title"]/h3/text()'))
+        title = self.normalize_string(title)
+        description = "".join(event[0].xpath('./div[@class="event-details"]')[0].text_content())
+        description = self.normalize_string(description)
 
-        date = date.group().lstrip(" ").rstrip(".")
-        day, month = date.split(".")
+        return f"{title}: {description}"
 
-        # Year has changed since the parsed month is smaller than the current
-        # month.
-        if int(month) < int(month_now):
-            year += 1
-
-        return "{:4d}-{:2d}-{:2d}".format(year, int(month), int(day))
-
-    def parse_event(self, tag) -> Dict[str, Any]:
-        desc = ""
-
-        date = self.parse_date(tag.xpath('./div[@class="item_left"]/text()'))
-        title = " ".join(tag.xpath('./div[@class="item_center"]/h3/a/text()'))
-        for a in tag.xpath('./div[@class="item_center"]/p'):
-            desc += " " + " ".join(a.xpath('./*/text()'))
-        desc = re.sub("\s+", " ", desc)
-        desc = desc.lstrip(" ").rstrip(" ")
-        name = "%s - %s" % (title, desc)
-        name = re.sub("\s+", " ", name)
-        price = self.parse_price(name)
+    def parse_event(self, event: lxml.html.HtmlElement) -> Dict[str, Any]:
+        date = self.parse_date(event.xpath('./div[@class="event-date"]/div[@class="start-date"]'))
+        event_name = self.parse_info(event.xpath('./div[contains(@class, "event-info single-day")]'))
+        price = self.parse_price(event_name)
 
         return {"venue": self.get_venue_name(),
                 "date": date,
-                "name": name,
+                "name": event_name,
                 "price": price}
 
     def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
-        doc = html.fromstring(data)
+        doc = lxml.html.fromstring(data)
 
-        for item in doc.xpath('//div[@id="left"]/div[@class="item"]'):
+        for item in doc.xpath('/html/body//div[@class="event-list"]/ul[@class="event-list-view"]'
+                              '/li[contains(@class, "event live")]'):
             yield self.parse_event(item)
 
 
