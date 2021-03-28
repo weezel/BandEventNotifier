@@ -20,16 +20,6 @@ class Telakka(AbstractVenue):
 
         # Parsing patterns
         self.pat_date = re.compile("[0-9]+.[0-9]+.")
-        self.monetary = re.compile("[0-9,]+[ ]?€")
-
-    def parse_price(self, elem: str) -> str:
-        if elem == '':
-            return '0 €'
-
-        prices = re.search(self.monetary, elem)
-        if prices is None:
-            return "0 €"
-        return "".join(prices.group())
 
     def parse_date(self, elem: lxml.html.HtmlElement):
         date_now = datetime.datetime.now()
