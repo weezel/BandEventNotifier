@@ -18,10 +18,7 @@ def load_venue_plugins() -> List[AbstractVenue]:
     Read plugin directory and load found plugins.
     Variable "blocklist" can be used to exclude loading certain plugins.
     """
-    blocklist = ["plugin_tiketti",
-                 "plugin_yotalo",
-                 "plugin_glivelabtampere",
-                 "plugin_glivelabhelsinki"]
+    blocklist = ["plugin_tiketti"]
     found_blocked = list()
     loadedplugins = list()
     pluginspathabs = os.path.join(os.path.dirname(__file__), "venues")
