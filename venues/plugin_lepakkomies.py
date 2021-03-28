@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from typing import List
 
 import lxml.html
 
@@ -20,44 +21,49 @@ class Lepakkomies(AbstractVenue):
         self.country = "Finland"
 
         # Parsing patterns
-        self.monetaryp = re.compile("[0-9]+")
-
-    def parse_price(self, line):
-        tmp = re.search(self.monetaryp, line)
-        if tmp:
-            price = tmp.group()
-            return f"{price}€"
-        return "0"
+        self.monetaryp = re.compile("[0-9,.]+")
 
     def parse_date(self, tag: str):
-        month_now = time.strftime("%m")
+        this_month = int(time.strftime("%m"))
         year = int(time.strftime("%Y"))
 
         if len(tag) == 0:
             return ""
 
         day, month = tag.rstrip(".").split(".")
+        day = int(day)
+        month = int(month)
         # Are we on the new year already?
-        if int(month) < int(month_now):
+        if month < this_month:
             year += 1
 
-        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+        return f"{year:04d}-{month:02d}-{day:02d}"
+
+    def parse_price(self, prices: List[str]) -> str:
+        found_prices = list()
+
+        for p in prices:
+            if (match := self.monetaryp.search(p)) is not None:
+                found_prices.append(match.group())
+
+        return "{}€".format("".join(found_prices))
 
     def parse_event(self, tag: lxml.html.HtmlElement):
-        datedata = " ".join(tag.xpath('.//span[contains(@class, ' +
+        datedata = " ".join(tag.xpath('.//span[contains(@class, '
                                       '"event-date")]/span/text()'))
         date = self.parse_date(datedata)
-        artist = " ".join(tag.xpath('.//span[contains(@class, ' +
+        artist = " ".join(tag.xpath('.//span[contains(@class, '
                                     '"event-info")]/h2/text()'))
-        price = " ".join(tag.xpath('.//span[contains(@class, ' +
+        price = " ".join(tag.xpath('.//span[contains(@class, '
                                    '"price")]/text()'))
+        price = self.parse_price(price.split(" "))
 
         return {"venue": self.get_venue_name(),
                 "date": date,
-                "name": f"{artist}",
-                "price": self.parse_price(price)}
+                "name": artist,
+                "price": price}
 
-    def parse_events(self, data: str):
+    def parse_events(self, data: bytes):
         doc = lxml.html.fromstring(data)
         eventtags = doc.xpath('//div[@class="event-list"]')
 
