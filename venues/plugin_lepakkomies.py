@@ -9,10 +9,6 @@ import time
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception):
-    pass
-
-
 class Lepakkomies(AbstractVenue):
     def __init__(self):
         # XXX Apparently they have a Facebook page and then Meteli.

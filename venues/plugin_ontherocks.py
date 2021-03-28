@@ -9,9 +9,6 @@ import lxml.html
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception): pass
-
-
 class Ontherocks(AbstractVenue):
     def __init__(self):
         super().__init__()

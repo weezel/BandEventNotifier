@@ -6,10 +6,7 @@ import json
 import re
 from typing import Any, Dict, Generator
 
-from venues.abstract_venue import AbstractVenue
-
-
-class PluginParseError(Exception): pass
+from venues.abstract_venue import AbstractVenue, IncorrectVenueImplementation
 
 
 class Pakkahuone(AbstractVenue):
@@ -52,7 +49,7 @@ class Pakkahuone(AbstractVenue):
                 events = line
                 break
         if events is None:
-            raise PluginParseError("Parsing Klubi failed")
+            raise IncorrectVenueImplementation("Parsing Pakkahuone failed")
         normalized = re.sub(events_line_pattern, "", events).rstrip(";\r")
         doc = json.loads(normalized)
 

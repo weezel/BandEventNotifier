@@ -7,9 +7,6 @@ from lxml import html
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception): pass
-
-
 class Tavastia(AbstractVenue):
     def __init__(self):
         super().__init__()

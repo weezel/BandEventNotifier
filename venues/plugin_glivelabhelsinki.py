@@ -10,10 +10,6 @@ import requests
 from venues.abstract_venue import AbstractVenue
 
 
-class PluginParseError(Exception):
-    pass
-
-
 class Glivelabhelsinki(AbstractVenue):
     def __init__(self):
         super().__init__()
