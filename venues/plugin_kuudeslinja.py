@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import re
 import time
 from typing import Any, Dict, Generator, List
 
@@ -15,12 +16,13 @@ class Kuudeslinja(AbstractVenue):
         self.name = "Kuudeslinja"
         self.city = "Helsinki"
         self.country = "Finland"
+        self.day_pat = r"[0-9]+\.[0-9]+"
 
     def parse_date(self, date_tag: List[str]) -> str:
         year = int(time.strftime("%Y"))
         this_month = int(time.strftime("%m"))
-        date_column = "".join(date_tag).split(" ")[-1]
-        day, month, _ = date_column.split(sep=".", maxsplit=2)
+        parsed_date = re.search(self.day_pat, "".join(date_tag))
+        day, month = parsed_date.group().split(sep=".", maxsplit=2)
         day, month = int(day), int(month)
         # Year wrapped
         if month < this_month:
