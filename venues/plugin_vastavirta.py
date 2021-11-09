@@ -36,9 +36,9 @@ class Vastavirta(AbstractVenue):
         return f"{prices}" if prices else "0"
 
     def parse_date(self, tag: lxml.html.HtmlElement) -> str:
-        day = tag.xpath('./*/div[@class="start-date"]/div[@class="event-day"]/text()')
-        m = tag.xpath('./*/div[@class="start-date"]/div[@class="event-month"]/text()')
-        year = tag.xpath('./*/div[@class="start-date"]/div[@class="event-year"]/text()')
+        day = tag.xpath('./div[contains(@class, "event-date")]/*/div[@class="event-day"]/text()')
+        m = tag.xpath('./div[contains(@class, "event-date")]/*/div[@class="event-month"]/text()')
+        year = tag.xpath('./div[contains(@class, "event-date")]/*/div[@class="event-year"]/text()')
 
         day = " ".join(day)
         month = " ".join(m).capitalize()
@@ -51,7 +51,7 @@ class Vastavirta(AbstractVenue):
             return ""
 
         month = self.monthmap[month]
-        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+        return "{:04d}-{:02d}-{:02d}".format(int(year), int(month), int(day))
 
     def parse_event(self, event: lxml.html.HtmlElement) -> Dict[str, Any]:
         date = self.parse_date(event)
@@ -66,9 +66,9 @@ class Vastavirta(AbstractVenue):
     def parse_events(self, data: bytes) \
             -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data).getroottree().getroot()
-        tags = doc.xpath('//div[@class="event-list"]/ul'
-                         + '[@class="event-list-view"]'
-                         + '/li[@class="event "]')
+        tags = doc.xpath('//div[@class="event-list"]/'
+                         + 'ul[@class="event-list-view"]/'
+                         + 'li[@class="event "]')
         tmp = ""
 
         for event in reversed(tags):
@@ -87,9 +87,6 @@ if __name__ == '__main__':
 
     v = Vastavirta()
     r = requests.get(v.url)
-
-    # with open("venues/vastavirta.html") as f:
-    #    r = f.read()
 
     for event in v.parse_events(r.content):
         for k, v in event.items():
