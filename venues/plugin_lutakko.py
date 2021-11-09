@@ -43,12 +43,14 @@ class Lutakko(AbstractVenue):
         date = date.rstrip(".")  # FIXME
 
         day, month = date.split(".")
+        day = day.replace(" ", "")
+        month = month.replace(" ", "")
 
         # Are we on the new year already?
         if int(month) < int(month_now):
             year += 1
 
-        return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
+        return "{:04d}-{:02d}-{:02d}".format(int(year), int(month), int(day))
 
     def parse_event(self, tag):
         date = self.parse_date(tag)
@@ -57,7 +59,7 @@ class Lutakko(AbstractVenue):
         price = self.parse_price(tag)
 
         name = f"{title} {desc}"
-        name = re.sub("\s+", " ", name).lstrip(" ").rstrip(" ")
+        name = re.sub("\\s+", " ", name).lstrip(" ").rstrip(" ")
 
         return {
             "venue": self.get_venue_name(),
