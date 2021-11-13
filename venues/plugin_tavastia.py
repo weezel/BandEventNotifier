@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import re
+import time
 
-from lxml import html
+import lxml.html
 
 from venues.abstract_venue import AbstractVenue
 
@@ -10,53 +11,54 @@ from venues.abstract_venue import AbstractVenue
 class Tavastia(AbstractVenue):
     def __init__(self):
         super().__init__()
-        self.url = "http://www.tavastiaklubi.fi"
+        self.url = "https://tavastiaklubi.fi/?show_all=1"
         self.name = "Tavastia"
         self.city = "Helsinki"
         self.country = "Finland"
 
         # Parsing patterns
-        self.datepat = re.compile("\d+\.\d+.\d+")
+        self.datepat = re.compile("[0-9]+\\.[0-9]+\\.")
 
     def parse_price(self, tag):
-        prices = tag.xpath('./a[@class="event-details-col"]/' + \
-                           'p[@class="event-details"]' + \
-                           '/span[@class="event-priceinfo"]')
-        prices = [i.text_content() for i in prices \
-                  if i.text_content() != ' ']
+        prices = "".join(tag.xpath('./div[@class="details"]/div[@class="info"]//div[@class="tickets"]/text()'))
+        prices = prices.replace("\n", " ")
+        prices = prices.replace("Liput ", "")
+        prices = re.sub("\\s+", "", prices)
 
-        return "/".join(prices)
+        return prices
 
-    def parse_date(self, tag: html.HtmlElement) -> str:
-        datetmp = ""
+    def parse_date(self, tag: lxml.html.HtmlElement) -> str:
+        year = int(time.strftime("%Y"))
+        month_now = int(time.strftime("%m"))
+        tmp = "".join(tag.xpath('./div[@class="details"]/div[@class="date"]/text()'))
+        if date_found := re.search(self.datepat, tmp):
+            day, month = date_found.group().split(".")[0:2]
+            if int(month) < month_now:
+                year += 1
+            return f"{year:04d}-{int(month):02d}-{int(day):02d}"
 
-        if tag is None or len(tag) == 0:
-            return ""
+        return ""
 
-        datetmp = "".join(tag.xpath('./a[@class="event-date-col"]/span/text()'))
-
-        day, month, year = datetmp.split(".")
-        return "%s-%.2d-%.2d" % (int(year), int(month), int(day))
-
-    def parse_event(self, tag: html.HtmlElement):
+    def parse_event(self, tag: lxml.html.HtmlElement):
         date = self.parse_date(tag)
-        event = tag.xpath('./a[@class="event-details-col"]/h2/text()')
+        event = tag.xpath('./h2/text()')
         event = " ".join(event).replace("\n", "")
-        event = re.sub("\s+", " ", event)
+        event = re.sub("\\s+", " ", event)
         event = event.lstrip(" ").rstrip(" ")
 
         price = self.parse_price(tag)
 
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": event,
-                "price": price}
+        return {
+            "venue": self.get_venue_name(),
+            "date": date,
+            "name": event,
+            "price": price,
+        }
 
     def parse_events(self, data: bytes):
-        doc = html.fromstring(data)
+        doc = lxml.html.fromstring(data)
 
-        for tag in doc.xpath('//div[starts-with(@class, "event-content")]' + \
-                             '/*/div[@class="event-row"]'):
+        for tag in doc.xpath('//div[@class="tiketti-list"]/a'):
             yield self.parse_event(tag)
 
 
