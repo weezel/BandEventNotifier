@@ -14,75 +14,64 @@ class Yotalo(AbstractVenue):
         self.name = "Yo-talo"
         self.city = "Tampere"
         self.country = "Finland"
+        self.date_pat = re.compile("[0-9]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}")
 
     def normalize_string(self, s: str):
         rm_newlines = s.replace("\n", " ")
-        rm_spaces = re.sub("\s+", " ", rm_newlines)
-        rm_left_padding = re.sub("^\s+", "", rm_spaces)
-        rm_right_padding = re.sub("\s+$", "", rm_left_padding)
+        rm_spaces = re.sub("\\s+", " ", rm_newlines)
+        rm_left_padding = re.sub("^\\s+", "", rm_spaces)
+        rm_right_padding = re.sub("\\s+$", "", rm_left_padding)
         return rm_right_padding
 
-    def month_to_number(self, month: str) -> int:
-        if month == "tammi":
-            return 1
-        elif month == "helmi":
-            return 2
-        elif month == "maalis":
-            return 3
-        elif month == "huhti":
-            return 4
-        elif month == "touko":
-            return 5
-        elif month == "kesä":
-            return 6
-        elif month == "heinä":
-            return 7
-        elif month == "elo":
-            return 8
-        elif month == "syys":
-            return 9
-        elif month == "loka":
-            return 10
-        elif month == "marras":
-            return 11
-        elif month == "joulu":
-            return 12
-
-        raise ValueError(f"Month mapping for '{month}' not implemented")
-
     def parse_date(self, tag: lxml.html.HtmlElement) -> str:
-        day = "".join(tag[0].xpath('./div[@class="event-day"]/text()'))
-        day = int(day)
-        month = "".join(tag[0].xpath('./div[@class="event-month"]/text()'))
-        month = self.month_to_number(month)
-        year = "".join(tag[0].xpath('./div[@class="event-year"]/text()'))
-        year = int(year)
-        return f"{year:04d}-{month:02d}-{day:02d}"
+        date_tag = "".join(tag.xpath('./*/div[contains(@class, "event-content")]/p[2]/text()'))
+        if date_found := re.search(self.date_pat, date_tag):
+            day, month, year = date_found.group().split(".")
+            return f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
+        return "00-00-0000"
 
-    def parse_info(self, event: lxml.html.HtmlElement) -> str:
-        title = "".join(event[0].xpath('./div[@class="event-title"]/h3/text()'))
+    def parse_price(self, tag: lxml.html.HtmlElement) -> str:
+        price_elem = "".join(tag.xpath('./*/div[contains(@class, "event-content")]'
+                                       '/p[contains(text(), "Ennakkoliput")]/text()'))
+        prices_with_mon = self.pricepat_monetary.findall(price_elem)
+        prices = []
+        for price in prices_with_mon:
+            parsed_price = self.pricepat_plain.findall(price)
+            if len(parsed_price) == 0:
+                continue
+            prices.append("".join(parsed_price))
+
+        if len(prices) == 0:
+            return "0€"
+        elif len(prices) == 2:
+            in_advance, from_door = prices[0], prices[1]
+            return f"{in_advance}€/{from_door}€"
+        return "{}€".format("".join(prices))
+
+    def parse_artists(self, tag: lxml.html.HtmlElement) -> str:
+        title = "".join(tag.xpath('./*/div[@class="event-title"]/h3/text()'))
         title = self.normalize_string(title)
-        description = "".join(event[0].xpath('./div[@class="event-details"]')[0].text_content())
-        description = self.normalize_string(description)
+        info = "".join(tag.xpath('./*/div[@class="event-content"]/p[2]/strong/text()'))
+        info = self.normalize_string(info)
 
-        return f"{title}: {description}"
-
-    def parse_event(self, event: lxml.html.HtmlElement) -> Dict[str, Any]:
-        date = self.parse_date(event.xpath('./div[@class="event-date"]/div[@class="start-date"]'))
-        event_name = self.parse_info(event.xpath('./div[contains(@class, "event-info single-day")]'))
-        price = self.parse_price(event_name)
-
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": event_name,
-                "price": price}
+        return f"{title}: {info}"
 
     def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)
 
-        for item in doc.xpath('/html/body//div[@class="event-list"]/ul[@class="event-list-view"]'
-                              '/li[contains(@class, "event live")]'):
-            yield self.parse_event(item)
+        for item in doc.xpath('//li[contains(@class, "event live")]'):
+            date = self.parse_date(item)
+            if date == "00-00-0000":
+                continue
+            event = self.parse_artists(item)
+            price = self.parse_price(item)
+
+            yield {
+                "venue": self.get_venue_name(),
+                "date": date,
+                "name": event,
+                "price": price
+            }
 
 
 if __name__ == '__main__':
