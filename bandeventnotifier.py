@@ -86,8 +86,8 @@ class Fetcher(threading.Thread):
         # TODO Check r.ok
         if r.status_code == 404:
             print(f"{venue.url} is broken, please fix it.")
-            return bytes("")
-        elif r.status_code != 200:
+            return "".encode("utf8")
+        elif not r.ok:
             for retry in range(0, retries):
                 print(f"Couldn't connect {venue.name}[{venue.city}] {venue.url}, ", end="")
                 print(f"retrying in {sleeptimesec:.0f} seconds [{retry + 1:1d}/{retries:2d}]...")
