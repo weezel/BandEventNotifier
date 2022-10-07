@@ -147,25 +147,25 @@ def show_gigs(dbeng: dbengine.DBEngine) -> None:
     print(utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline"))
     for event in dbeng.getAllGigs():
         for artist in dbeng.getArtists():
-            printEvent = False
+            print_event = False
             artistname = artist["artist"].lower().split(" ")
             eventartists = event[3].lower()
 
             # Singly worded artist name
             if len(artistname) == 1:
                 if artistname[0] in eventartists.split(" "):
-                    printEvent = True
+                    print_event = True
             # More than one word in artist's name
             else:
                 if " ".join(artistname) in eventartists:
-                    printEvent = True
+                    print_event = True
 
             # Don't show artists that have been listened only a few times
             # (miss shots likely).
             if int(artist["playcount"]) < MIN_PLAYCOUNT:
-                printEvent = False
+                print_event = False
 
-            if printEvent:
+            if print_event:
                 print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format(
                     artist["artist"],
                     int(artist["playcount"])),
