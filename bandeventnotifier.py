@@ -105,7 +105,7 @@ def feth_venues(dbeng: dbengine.DBEngine) -> None:
     venues = load_venue_plugins()
     for v in range(MAX_THREADS):
         t = Fetcher(fetchqueue, dbeng)
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
     for venue in venues:
         fetchqueue.put(venue)
@@ -132,7 +132,7 @@ def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
     pages = lfmr.getPaginatedPages()
     for v in range(MAX_THREADS):
         t = LastFmRetriever(lfm_queue, all_bands)
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
     for page in pages:
         lfm_queue.put(page)
