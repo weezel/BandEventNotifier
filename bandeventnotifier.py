@@ -1,6 +1,6 @@
 #!bin/python3
 # -*- coding: utf-8 -*-
-
+import argparse
 import datetime
 import os
 import signal
@@ -99,113 +99,117 @@ class Fetcher(threading.Thread):
         return r.content
 
 
-def usage() -> None:
-    print("usage: bandeventnotifier.py [fetch [lastfm|venues] | gigs | html filename | purge]")
-    sys.exit(1)
+def feth_venues(dbeng: dbengine.DBEngine) -> None:
+    print("[+] Fetching venues events.")
+    fetchqueue = Queue()
+    venues = load_venue_plugins()
+    for v in range(MAX_THREADS):
+        t = Fetcher(fetchqueue, dbeng)
+        t.setDaemon(True)
+        t.start()
+    for venue in venues:
+        fetchqueue.put(venue)
+    fetchqueue.join()
+    print("[=] Venues events fetched.")
+    print("[+] Inserting into a database...")
+    for v in venues:
+        # Add database entries for the venue
+        dbeng.pluginCreateVenueEntity(v.event_sqlentity())
+
+        if v.url not in parsed_venues_data:
+            print(f"Cannot add data for {v.name}/{v.city} ({v.country}) because it's empty. Continuing...")
+            continue
+        parsed_venue = parsed_venues_data[v.url]
+        dbeng.insertVenueEvents(v, parsed_venue)
+    print("[=] Venues events added into the database.")
+
+
+def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
+    print("[+] Fetching LastFM user data.")
+    all_bands = dict()
+    lfm_queue = Queue()
+    lfmr = LastFmRetriever(lfm_queue, all_bands)
+    pages = lfmr.getPaginatedPages()
+    for v in range(MAX_THREADS):
+        t = LastFmRetriever(lfm_queue, all_bands)
+        t.setDaemon(True)
+        t.start()
+    for page in pages:
+        lfm_queue.put(page)
+    lfm_queue.join()
+    for artist, playcount in lfmr.getArtistsPlaycounts():
+        dbeng.insertLastFMartists(artist, playcount)
+    print("[=] LastFM data fetched.")
+
+
+def show_gigs(dbeng: dbengine.DBEngine) -> None:
+    weektimespan = datetime.datetime.now() + datetime.timedelta(days=7)
+    print(utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline"))
+    for event in dbeng.getAllGigs():
+        for artist in dbeng.getArtists():
+            printEvent = False
+            artistname = artist["artist"].lower().split(" ")
+            eventartists = event[3].lower()
+
+            # Singly worded artist name
+            if len(artistname) == 1:
+                if artistname[0] in eventartists.split(" "):
+                    printEvent = True
+            # More than one word in artist's name
+            else:
+                if " ".join(artistname) in eventartists:
+                    printEvent = True
+
+            # Don't show artists that have been listened only a few times
+            # (miss shots likely).
+            if int(artist["playcount"]) < MIN_PLAYCOUNT:
+                printEvent = False
+
+            if printEvent:
+                print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format(
+                    artist["artist"],
+                    int(artist["playcount"])),
+                    "yellow"))
+                if datetime.datetime.strptime(event[0], "%Y-%m-%d") <= \
+                        weektimespan:
+                    gigdate = utils.colorize(event[0], "red")
+                else:
+                    gigdate = utils.colorize(event[0], "bold")
+                print("[{}] {}, {}".format(
+                    gigdate,
+                    utils.colorize(event[1], "cyan"),
+                    event[2]))
+                print(f"{event[3]}\n")
+                break  # We are done, found already a matching artist
 
 
 def main() -> None:
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--gigs", help="Show coming gigs", action="store_true")
+    argparser.add_argument("--purge", help="Purge gone gigs", action="store_true")
+
+    sub_parser = argparser.add_subparsers(help="Fetch venues performers or lastfm listening stats")
+    fetch_parser = sub_parser.add_parser("fetch", help="Fetch options")
+    mut = fetch_parser.add_mutually_exclusive_group()
+    mut.add_argument("--lastfm", help="Fetch LastFM listening stats", action="store_true")
+    mut.add_argument("--venues", help="Fetch and parse venues events", action="store_true")
+
+    args = argparser.parse_args()
+
     if not os.path.exists(dbengine.dbname):
         dbengine.init_db()
 
     dbeng = dbengine.DBEngine()
 
-    if len(sys.argv) < 2:
-        dbeng.close()
-        usage()
-    elif sys.argv[1] == "fetch":
-        if len(sys.argv) < 3:
-            print("fetch: [lastfm|venues]")
-            usage()
-        elif sys.argv[2] == "lastfm":
-            print("[+] Fetching LastFM user data.")
-            all_bands = dict()
-            lfm_queue = Queue()
-            lfmr = LastFmRetriever(lfm_queue, all_bands)
-            pages = lfmr.getPaginatedPages()
-
-            for v in range(MAX_THREADS):
-                t = LastFmRetriever(lfm_queue, all_bands)
-                t.setDaemon(True)
-                t.start()
-            for page in pages:
-                lfm_queue.put(page)
-            lfm_queue.join()
-
-            for artist, playcount in lfmr.getArtistsPlaycounts():
-                dbeng.insertLastFMartists(artist, playcount)
-            print("[=] LastFM data fetched.")
-        elif sys.argv[2] == "venues":
-            print("[+] Fetching venues events.")
-            fetchqueue = Queue()
-            venues = load_venue_plugins()
-            for v in range(MAX_THREADS):
-                t = Fetcher(fetchqueue, dbeng)
-                t.setDaemon(True)
-                t.start()
-            for venue in venues:
-                fetchqueue.put(venue)
-            fetchqueue.join()
-            print("[=] Venues events fetched.")
-
-            print("[+] Inserting into a database...")
-            for v in venues:
-                # Add database entries for the venue
-                dbeng.pluginCreateVenueEntity(v.event_sqlentity())
-
-                if v.url not in parsed_venues_data:
-                    print(f"Cannot add data for {v.name}/{v.city} ({v.country}) because it's empty. Continuing...")
-                    continue
-                parsed_venue = parsed_venues_data[v.url]
-                dbeng.insertVenueEvents(v, parsed_venue)
-            print("[=] Venues events added into the database.")
-        else:
-            usage()
-    elif sys.argv[1] == "gigs":
-        weektimespan = datetime.datetime.now() + datetime.timedelta(days=7)
-        print(utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline"))
-
-        for event in dbeng.getAllGigs():
-            for artist in dbeng.getArtists():
-                printEvent = False
-                artistname = artist["artist"].lower().split(" ")
-                eventartists = event[3].lower()
-
-                # Singly worded artist name
-                if len(artistname) == 1:
-                    if artistname[0] in eventartists.split(" "):
-                        printEvent = True
-                # More than one word in artist's name
-                else:
-                    if " ".join(artistname) in eventartists:
-                        printEvent = True
-
-                # Don't show artists that have been listened only a few times
-                # (miss shots likely).
-                if int(artist["playcount"]) < MIN_PLAYCOUNT:
-                    printEvent = False
-
-                if printEvent:
-                    print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format(
-                        artist["artist"],
-                        int(artist["playcount"])),
-                        "yellow"))
-                    if datetime.datetime.strptime(event[0], "%Y-%m-%d") <= \
-                            weektimespan:
-                        gigdate = utils.colorize(event[0], "red")
-                    else:
-                        gigdate = utils.colorize(event[0], "bold")
-                    print("[{}] {}, {}".format(
-                        gigdate,
-                        utils.colorize(event[1], "cyan"),
-                        event[2]))
-                    print(f"{event[3]}\n")
-                    break  # We are done, found already a matching artist
-    elif sys.argv[1] == "purge":
+    if args.gigs:
+        show_gigs(dbeng)
+    elif args.purge:
         print("Purging past events...")
         dbeng.purgeOldEvents()
-    else:
-        usage()
+    elif args.lastfm:
+        fetch_lastfm(dbeng)
+    elif args.venues:
+        feth_venues(dbeng)
 
     dbeng.close()
 
