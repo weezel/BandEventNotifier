@@ -89,7 +89,7 @@ class Fetcher(threading.Thread):
             return "".encode("utf8")
         elif not r.ok:
             for retry in range(0, retries):
-                print(f"Couldn't connect {venue.name}[{venue.city}] {venue.url}, ", end="")
+                print(f"Couldn't connect {venue.name}[{venue.city}] {venue.url}, status code was {r.status_code}, ", end="")
                 print(f"retrying in {sleeptimesec:.0f} seconds [{retry + 1:1d}/{retries:2d}]...")
                 time.sleep(sleeptimesec)
                 r = requests.get(venue.url, timeout=5)
