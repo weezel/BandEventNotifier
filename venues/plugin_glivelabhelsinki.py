@@ -30,15 +30,14 @@ class Glivelabhelsinki(AbstractVenue):
             year += 1
         return "%.4d-%.2d-%.2d" % (int(year), int(month), int(day))
 
-    def normalize_string(self, s: str):
+    def normalize_string(self, s: str) -> str:
         rm_newlines = s.replace("\n", " ")
-        rm_spaces = re.sub("\s+", " ", rm_newlines)
-        rm_left_padding = re.sub("^\s+", "", rm_spaces)
-        rm_right_padding = re.sub("\s+$", "", rm_left_padding)
+        rm_spaces = re.sub(r"\s+", " ", rm_newlines)
+        rm_left_padding = re.sub(r"^\s+", "", rm_spaces)
+        rm_right_padding = re.sub(r"\s+$", "", rm_left_padding)
         return rm_right_padding
 
-    def parse_event(self, tag: lxml.html.HtmlElement) \
-            -> Dict[str, Any]:
+    def parse_event(self, tag: lxml.html.HtmlElement) -> Dict[str, Any]:
         date = self.parse_date(tag.xpath('./div[@class="datetime"]/div[@class="date"]/text()'))
         event_description = " ".join(tag.xpath('./div[@class="title-description"]/h2[@class="title"]/text()'))
         event_description = self.normalize_string(event_description)
@@ -49,8 +48,7 @@ class Glivelabhelsinki(AbstractVenue):
                 "name": event_description,
                 "price": price}
 
-    def parse_events(self, data: bytes) \
-            -> Generator[Dict[str, Any], None, None]:
+    def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)
         eventtags = doc.xpath('/html/body/div[@id="page"]/div[@id="main"]/article[@class="page"]/article'
                               '//ul[@class="listing"]/li[@class="item"]/a/div[@class="info"]')
