@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+from typing import Any, Dict, Generator
 
 import lxml.html
 
@@ -20,7 +21,7 @@ class Korjaamo(AbstractVenue):
         self.datepat = re.compile("[0-9.]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}")
 
     def parse_date(self, tag: lxml.html.HtmlElement) -> str:
-        pvm_tag = "".join(tag.xpath('.//div[@class="gt-date"]/span/text()'))
+        pvm_tag = "".join(tag.xpath('.//div[contains(@class, "gt-start-date")]/span/text()'))
         if (parsed_pvm := self.datepat.search(pvm_tag)) is not None:
             day, month, year = parsed_pvm.group().split(".")
             day = int(day)
@@ -32,7 +33,7 @@ class Korjaamo(AbstractVenue):
 
     def parse_event(self, tag: lxml.html.HtmlElement) -> str:
         info_tag = "".join(tag.xpath('.//div[@class="gt-title"]/a/text()'))
-        info_tag = re.sub("\\s+", " ", info_tag).lstrip(" ").rstrip(" ")
+        info_tag = re.sub(r"\s+", " ", info_tag).lstrip(" ").rstrip(" ")
         return info_tag
 
     def parse_price(self, tag: lxml.html.HtmlElement) -> str:
@@ -44,7 +45,7 @@ class Korjaamo(AbstractVenue):
         prices = [i.lstrip(" ").rstrip(" ") for i in prices]
         return "€/".join(prices).strip(" ") + "€"
 
-    def parse_events(self, data: bytes):
+    def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)
 
         for event in doc.xpath('//div[@class="gt-col"]'):
