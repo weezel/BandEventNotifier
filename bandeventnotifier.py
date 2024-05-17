@@ -20,6 +20,8 @@ from venues.abstract_venue import AbstractVenue
 MAX_THREADS = 20
 MIN_PLAYCOUNT = 9
 
+requests_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0"
+
 
 def signal_handler(signal_num: int, frame):
     print("Aborting...")
@@ -78,7 +80,7 @@ class Fetcher(threading.Thread):
         retries = 3
         sleeptimesec = 5.0
         try:
-            r = requests.get(venue.url)
+            r = requests.get(venue.url, headers={"User-Agent": requests_user_agent})
         except Exception as general_err:
             print(f"ERROR: {general_err}")
             return bytes("")
@@ -89,7 +91,8 @@ class Fetcher(threading.Thread):
             return "".encode("utf8")
         elif not r.ok:
             for retry in range(0, retries):
-                print(f"Couldn't connect {venue.name}[{venue.city}] {venue.url}, status code was {r.status_code}, ", end="")
+                print(f"Couldn't connect {venue.name}[{venue.city}] {venue.url}, status code was {r.status_code}, ",
+                      end="")
                 print(f"retrying in {sleeptimesec:.0f} seconds [{retry + 1:1d}/{retries:2d}]...")
                 time.sleep(sleeptimesec)
                 r = requests.get(venue.url, timeout=5)
