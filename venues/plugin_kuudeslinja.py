@@ -36,12 +36,14 @@ class Kuudeslinja(AbstractVenue):
         title = " ".join(tag.xpath('./div[@class="title"]/text()'))
         info = " ".join(tag.xpath('./div[@class="info"]/text()'))
         price = self.parse_price(info)
-        event = f"{title}: {info}"
+        event = f"{title}: {info}".replace("\n", "")
 
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": event,
-                "price": price}
+        return {
+            "venue": self.get_venue_name(),
+            "date": date,
+            "name": event,
+            "price": price
+        }
 
     def parse_events(self, data: bytes) \
             -> Generator[Dict[str, Any], None, None]:
