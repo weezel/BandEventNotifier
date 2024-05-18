@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import datetime
-import json
 import re
 from typing import Any, Dict, Generator
 
-from venues.abstract_venue import AbstractVenue, IncorrectVenueImplementation
+import lxml.html
+
+from venues.abstract_venue import AbstractVenue
 
 
 class Pakkahuone(AbstractVenue):
@@ -16,46 +16,39 @@ class Pakkahuone(AbstractVenue):
         self.name = "Pakkahuone"
         self.city = "Tampere"
         self.country = "Finland"
+        self.price_pat = r"[0-9,.]€"
 
-    def parseDateFromEpoc(self, date):
-        return datetime.datetime.fromtimestamp(date).strftime("%Y-%m-%d")
+    def parse_artists(self, tag: lxml.html.HtmlElement) -> str:
+        title = " ".join(tag.xpath('.//h2[contains(@class, "event-artist")]/text()'))
+        return re.sub(r"\s+", " ", title)
 
-    def parseArtists(self, artists):
-        if artists is None:
-            return ""
-        return ", ".join([artist["nimi"] for artist in json.loads(artists)])
+    def get_price(self, tag: lxml.html.HtmlElement) -> str:
+        price_tags = " ".join(tag.xpath('./ul[@class="event-feed-item__info"]/li/text()'))
+        prices = re.findall(self.price_pat, price_tags)
+        if len(prices) == 0:
+            return "0€"
+        return "/".join(prices)
 
-    def parsePrice(self, e):
-        from_door = e["hinta"] if e["hinta"] is not None else 0
-        return "{}/{}€".format(e["ennakkolipun_hinta"], from_door)
+    def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
+        doc = lxml.html.fromstring(data)
+        events = doc.xpath('//div[contains(@class, "event-feed")]//div[@class="event-feed-item__content"]')
+        for event in events:
+            event_venue = " ".join(event.xpath('.//li[@class="event-venue"]/text()'))
+            if "pakkahuone" not in event_venue.lower():
+                continue
 
-    def parse_event(self, e):
-        date = self.parseDateFromEpoc(int(e["aika_alku"]))
-        title = e["otsikko"].rstrip(":")
-        artist = self.parseArtists(e["artistit"])
-        desc = json.loads(e["kuvaus"]).get("summary")
-        price = self.parsePrice(e)
-
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": re.sub("\s+", " ", f"{title}: {artist} {desc}"),
-                "price": price}
-
-    def parse_events(self, json_data: bytes) -> Generator[Dict[str, Any], None, None]:
-        events_line_pattern = re.compile(r"^\s+\$scope.events = ")
-        events = None
-        for line in json_data.decode("utf-8").split("\n"):
-            if re.search(events_line_pattern, line):
-                events = line
-                break
-        if events is None:
-            raise IncorrectVenueImplementation("Parsing Pakkahuone failed")
-        normalized = re.sub(events_line_pattern, "", events).rstrip(";\r")
-        doc = json.loads(normalized)
-
-        for e in doc:
-            if e["tila"] == "Pakkahuone":
-                yield self.parse_event(e)
+            date = "".join(event.xpath('.//time/text()'))
+            if date.count("/") != 2:
+                continue
+            day, month, year = date.split("/")
+            title = self.parse_artists(event)
+            prices = self.get_price(event)
+            yield {
+                "venue": self.get_venue_name(),
+                "date": "{:04d}-{:02d}-{:02d}".format(int(year), int(month), int(day)),
+                "name": title,
+                "price": prices,
+            }
 
 
 if __name__ == '__main__':
