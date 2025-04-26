@@ -130,7 +130,7 @@ def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
     all_bands = dict()
     lfm_queue = Queue()
     lfmr = LastFmRetriever(lfm_queue, all_bands)
-    pages = lfmr.getPaginatedPages()
+    pages = lfmr.get_paginated_pages()
     for v in range(MAX_THREADS):
         t = LastFmRetriever(lfm_queue, all_bands)
         t.daemon = True
@@ -138,7 +138,7 @@ def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
     for page in pages:
         lfm_queue.put(page)
     lfm_queue.join()
-    for artist, playcount in lfmr.getArtistsPlaycounts():
+    for artist, playcount in lfmr.get_artists_playcounts():
         dbeng.insertLastFMartists(artist, playcount)
     print("[=] LastFM data fetched.")
 

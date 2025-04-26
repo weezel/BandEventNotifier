@@ -18,7 +18,7 @@ class LfmUserError(Exception): pass
 class LfmException(Exception): pass
 
 
-def isEmpty(s):
+def is_empty(s):
     return True if s is None or len(s) == 0 else False
 
 
@@ -28,10 +28,10 @@ class LastFmRetriever(threading.Thread):
         self.__queue = queue
 
         self.artists_playcounts = all_bands
-        self.__username = self.__readUsername(filename)
+        self.__username = self.__read_username(filename)
         self.url = "https://www.last.fm/user/{username}/library/artists?page={pagenumber}"
 
-    def __readUsername(self, fname):
+    def __read_username(self, fname):
         """
         First line of the file must include a username.
         """
@@ -45,11 +45,11 @@ class LastFmRetriever(threading.Thread):
             return data[0]
 
     # FIXME Add venue type
-    def calculatePopularity(self, allbands, thisband):
+    def calculate_popularity(self, allbands, thisband):
         totalplaycount = sum([int(artist.playcount) for artist in allbands])
         return thisband.playcount / totalplaycount * 100.0
 
-    def getPaginatedPages(self) -> List[str]:
+    def get_paginated_pages(self) -> List[str]:
         """
         Returns a list of LastFM library pages. For example:
         [http://www.last.fm/user/exampleUser/library/artists?page=1
@@ -68,7 +68,7 @@ class LastFmRetriever(threading.Thread):
         return [self.url.format(username=self.__username, pagenumber=i)
                 for i in range(1, pagescount + 1)]
 
-    def __parsePage(self, html: str) -> None:
+    def __parse_page(self, html: str) -> None:
         pat_numbers = re.compile("[0-9,]+")
         site = lxml.html.fromstring(html)
 
@@ -82,12 +82,12 @@ class LastFmRetriever(threading.Thread):
             playcount = re.search(pat_numbers, parsed_playcount)
             playcount = playcount.group().replace(",", "")
 
-            if isEmpty(artist) or isEmpty(playcount):
+            if is_empty(artist) or is_empty(playcount):
                 raise LfmException(f"Failed to parse artist ({artist}) or playcount ({playcount})")
 
             self.artists_playcounts[artist] = int(playcount)
 
-    def getArtistsPlaycounts(self) -> Generator[Tuple[str, int], None, None]:
+    def get_artists_playcounts(self) -> Generator[Tuple[str, int], None, None]:
         for k, v in self.artists_playcounts.items():
             yield k, int(v)
 
@@ -104,7 +104,7 @@ class LastFmRetriever(threading.Thread):
         while True:
             url = self.__queue.get()
             html = self.__fetch(url)
-            self.__parsePage(html)
+            self.__parse_page(html)
             self.__queue.task_done()
 
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     all_bands = dict()
     lfmr = LastFmRetriever(lfmQueue, all_bands)
 
-    pages = lfmr.getPaginatedPages()
+    pages = lfmr.get_paginated_pages()
 
     for v in range(25):
         t = LastFmRetriever(lfmQueue, all_bands)
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     lfmQueue.join()
 
     print("# [Rank] Playcount: Artist")
-    for i, kv in enumerate(sorted(lfmr.getArtistsPlaycounts(),
+    for i, kv in enumerate(sorted(lfmr.get_artists_playcounts(),
                                   key=lambda x: x[1],
                                   reverse=True)):
         print(f"[{i:>6d}] {kv[1]:>6d}: {kv[0]}")
