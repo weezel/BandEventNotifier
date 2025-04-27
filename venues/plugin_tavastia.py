@@ -41,7 +41,7 @@ class Tavastia(AbstractVenue):
 
     def parse_event(self, tag: lxml.html.HtmlElement):
         date = self.parse_date(tag)
-        event = tag.xpath('./h2/text()')
+        event = tag.xpath('./h3/text()')
         event = " ".join(event).replace("\n", "")
         event = re.sub("\\s+", " ", event)
         event = event.lstrip(" ").rstrip(" ")
