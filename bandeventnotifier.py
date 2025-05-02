@@ -197,6 +197,7 @@ def main() -> None:
     mut = fetch_parser.add_mutually_exclusive_group()
     mut.add_argument("--lastfm", help="Fetch LastFM listening stats", action="store_true")
     mut.add_argument("--venues", help="Fetch and parse venues events", action="store_true")
+    mut.add_argument("--all", help="Fetch venues and LastFM artists", action="store_true")
 
     args = argparser.parse_args()
 
@@ -214,6 +215,9 @@ def main() -> None:
         fetch_lastfm(dbeng)
     elif args.venues:
         feth_venues(dbeng)
+    elif args.all:
+        feth_venues(dbeng)
+        fetch_lastfm(dbeng)
 
     dbeng.close()
 
