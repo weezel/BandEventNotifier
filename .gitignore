@@ -1,12 +1,12 @@
-USERNAME
+*.db
 *.dump
 *.pyc
-*.db
-# py-virtualenv related
+.idea/
 bin/
 include/
+lastfm_creds.json
 lib/
 local/
-pysqlite2-doc/
 pip-selfcheck.json
+pysqlite2-doc/
 share/

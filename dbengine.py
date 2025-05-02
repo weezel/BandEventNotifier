@@ -39,6 +39,9 @@ class DBEngine(object):
             if self.conn:
                 self.conn.close()
 
+    def get_conn(self) -> sqlite3.Connection:
+        return self.conn
+
     def pluginCreateVenueEntity(self, venue: Dict[str, str]) -> None:
         """
         Create needed venue entries.

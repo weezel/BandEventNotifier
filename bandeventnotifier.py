@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import json
 import os
 import signal
 import sys
@@ -11,6 +12,7 @@ import requests
 
 import dbengine
 import utils
+from lastfmapi import LastFMFetcher
 from lastfmfetch import LastFmRetriever
 from plugin_handler import load_venue_plugins
 from venues.abstract_venue import AbstractVenue
@@ -126,21 +128,22 @@ def feth_venues(dbeng: dbengine.DBEngine) -> None:
 
 
 def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
-    print("[+] Fetching LastFM user data.")
-    all_bands = dict()
-    lfm_queue = Queue()
-    lfmr = LastFmRetriever(lfm_queue, all_bands)
-    pages = lfmr.get_paginated_pages()
-    for v in range(MAX_THREADS):
-        t = LastFmRetriever(lfm_queue, all_bands)
-        t.daemon = True
-        t.start()
-    for page in pages:
-        lfm_queue.put(page)
-    lfm_queue.join()
-    for artist, playcount in lfmr.get_artists_playcounts():
-        dbeng.insertLastFMartists(artist, playcount)
-    print("[=] LastFM data fetched.")
+    print("[+] Fetching listened artists from LastFM")
+    lfm_creds = {}
+    with open("lastfm_creds.json", "r", encoding="utf-8") as f:
+        lfm_creds = json.load(f)
+    if lfm_creds is None:
+        print("Couldn't read lastfm_creds.json")
+        sys.exit(1)
+
+    lfm = LastFMFetcher(
+        username=lfm_creds["username"],
+        password=lfm_creds["password"],
+        api_key=lfm_creds["api_key"],
+        api_secret=lfm_creds["api_secret"],
+    )
+    lfm.fetch_and_store_all_artists(dbeng.get_conn())
+    print("[=] Fetched listened artists from LastFM")
 
 
 def show_gigs(dbeng: dbengine.DBEngine) -> None:
