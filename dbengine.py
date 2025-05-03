@@ -134,13 +134,26 @@ class DBEngine(object):
 
         return venue_name
 
-    def getAllGigs(self) -> Dict[str, str]:
-        q = "SELECT DISTINCT e.date, v.name, v.city, e.name " \
-            + "FROM event AS e INNER JOIN venue AS v ON e.venueid = v.id " \
-            + "GROUP BY e.date, v.name ORDER BY e.date ASC;"
+    def get_relevant_gigs(self) -> dict[str, str]:
+        q = """SELECT
+                   e.date,
+                   v.name AS venue_name,
+                   v.city,
+                   e.name AS event_name,
+                   GROUP_CONCAT(DISTINCT a.name || ' (' || a.playcount || ')') AS matching_artists
+                FROM event AS e
+                JOIN venue AS v ON e.venueid = v.id
+                JOIN artist AS a
+                  ON ' ' || LOWER(REPLACE(REPLACE(e.name, '-', ' '), ':', ' ')) || ' '
+                  LIKE '% ' || LOWER(a.name) || ' %'
+                WHERE a.playcount > 10
+                GROUP BY e.date, v.name, v.city
+                ORDER BY e.date ASC;
+        """
         gigs = dict()
         cur = None
         try:
+            self.conn.row_factory = sqlite3.Row
             cur = self.conn.cursor()
             results = cur.execute(q)
             gigs = results.fetchall()

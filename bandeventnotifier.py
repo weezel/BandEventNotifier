@@ -149,42 +149,19 @@ def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
 def show_gigs(dbeng: dbengine.DBEngine) -> None:
     weektimespan = datetime.datetime.now() + datetime.timedelta(days=7)
     print(utils.colorize("GIGS YOU MIGHT BE INTERESTED:", "underline"))
-    for event in dbeng.getAllGigs():
-        for artist in dbeng.getArtists():
-            print_event = False
-            artistname = artist["artist"].lower().split(" ")
-            eventartists = event[3].lower()
-
-            # Singly worded artist name
-            if len(artistname) == 1:
-                if artistname[0] in eventartists.split(" "):
-                    print_event = True
-            # More than one word in artist's name
-            else:
-                if " ".join(artistname) in eventartists:
-                    print_event = True
-
-            # Don't show artists that have been listened only a few times
-            # (miss shots likely).
-            if int(artist["playcount"]) < MIN_PLAYCOUNT:
-                print_event = False
-
-            if print_event:
-                print(utils.colorize("MATCH: {}, PLAYCOUNT: {:d}".format(
-                    artist["artist"],
-                    int(artist["playcount"])),
-                    "yellow"))
-                if datetime.datetime.strptime(event[0], "%Y-%m-%d") <= \
-                        weektimespan:
-                    gigdate = utils.colorize(event[0], "red")
-                else:
-                    gigdate = utils.colorize(event[0], "bold")
-                print("[{}] {}, {}".format(
-                    gigdate,
-                    utils.colorize(event[1], "cyan"),
-                    event[2]))
-                print(f"{event[3]}\n")
-                break  # We are done, found already a matching artist
+    for event in dbeng.get_relevant_gigs():
+        print(f"{utils.colorize('MATCH:', 'yellow')} {event['matching_artists']}")
+        if datetime.datetime.strptime(event["date"], "%Y-%m-%d") <= \
+                weektimespan:
+            gigdate = utils.colorize(event["date"], "red")
+        else:
+            gigdate = utils.colorize(event["date"], "bold")
+        print("[{}] {}\n{}".format(
+            gigdate,
+            utils.colorize(event["venue_name"], "cyan"),
+            event["event_name"]),
+        )
+        print()
 
 
 def main() -> None:
