@@ -4,6 +4,7 @@ import json
 import os
 import signal
 import sys
+import time
 import traceback
 
 import dbengine
@@ -18,13 +19,15 @@ def signal_handler(signal_num: int, frame):
 
 
 def fetch_venues(dbeng: dbengine.DBEngine) -> None:
+    started = time.perf_counter()
     print("[+] Fetching venues events.")
     vf = venuefetcher.VenueFetcher(dbeng)
     vf.fetch_venues()
-    print("[=] Venues events added into the database.")
+    print(f"[=] Venues events added into the database. Took {time.perf_counter() - started:.2f} sec")
 
 
 def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
+    started = time.perf_counter()
     print("[+] Fetching listened artists from LastFM")
     lfm_creds = {}
     with open("lastfm_creds.json", "r", encoding="utf-8") as f:
@@ -40,7 +43,7 @@ def fetch_lastfm(dbeng: dbengine.DBEngine) -> None:
         api_secret=lfm_creds["api_secret"],
     )
     lfm.fetch_and_store_all_artists(dbeng.get_conn())
-    print("[=] Fetched listened artists from LastFM")
+    print(f"[=] Fetched listened artists from LastFM. Took {time.perf_counter() - started:.2f} sec")
 
 
 def show_gigs(dbeng: dbengine.DBEngine) -> None:
@@ -78,6 +81,7 @@ def main() -> None:
     if not os.path.exists(dbengine.dbname):
         dbengine.init_db()
 
+    started = time.perf_counter()
     dbeng = dbengine.DBEngine()
 
     if args.gigs:
@@ -94,6 +98,8 @@ def main() -> None:
         fetch_lastfm(dbeng)
 
     dbeng.close()
+
+    print(f">>> Overall it took {time.perf_counter() - started:.2f} sec")
 
 
 if __name__ == '__main__':
