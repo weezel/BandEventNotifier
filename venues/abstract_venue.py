@@ -27,10 +27,12 @@ class AbstractVenue(ABC):
     def get_country(self) -> str:
         return self.country
 
-    def event_sqlentity(self) -> Dict[str, str]:
-        return {"name": self.name,
-                "city": self.city,
-                "country": self.country}
+    def event_sqlentity(self) -> dict[str, str]:
+        return {
+            "name": self.name,
+            "city": self.city,
+            "country": self.country,
+        }
 
     def parse_price(self, info_tag: str) -> str:
         prices_with_mon = self.pricepat_monetary.findall(info_tag)
@@ -51,7 +53,7 @@ class AbstractVenue(ABC):
     # FIXME Proper class type checking
     def __eq__(self, other):
         return hasattr(other, "url") \
-               and other.url == self.url
+            and other.url == self.url
 
     @abstractmethod
     def parse_events(self, data: Any) \

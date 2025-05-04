@@ -42,7 +42,7 @@ class DBEngine(object):
     def get_conn(self) -> sqlite3.Connection:
         return self.conn
 
-    def pluginCreateVenueEntity(self, venue: Dict[str, str]) -> None:
+    def plugin_create_venue_entity(self, venue: Dict[str, str]) -> None:
         """
         Create needed venue entries.
 
@@ -63,7 +63,7 @@ class DBEngine(object):
             finally:
                 cur.close()
 
-    def insertVenueEvents(self, venue: AbstractVenue, events: Dict[str, Any]) -> None:
+    def insert_venue_events(self, venue: AbstractVenue, events: list[dict[str, Any]]) -> None:
         """
         Insert parsed events from a venue into the database.
         """
@@ -73,7 +73,7 @@ class DBEngine(object):
                 cur = self.conn.cursor()
 
                 for event in events:
-                    venue_id = self.getVenueByName(
+                    venue_id = self.get_venue_by_name(
                         event["venue"],
                         venue.get_city(),
                         venue.get_country())[0]
@@ -118,7 +118,7 @@ class DBEngine(object):
 
         return results
 
-    def getVenueByName(self, vname: str, city: str, country: str) -> str:
+    def get_venue_by_name(self, vname: str, city: str, country: str) -> str:
         q = "SELECT id, name, city, country FROM venue " \
             + "WHERE name = ? AND city = ? AND country = ? LIMIT 1;"
         venue_name = str()
