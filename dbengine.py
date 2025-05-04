@@ -3,23 +3,43 @@
 
 import sqlite3
 import threading
-from typing import Any, Dict, Generator, Type
+from typing import Any, Dict, Generator
 
-from venues.abstract_venue import AbstractVenue, IncorrectVenueImplementation
+from venues.abstract_venue import AbstractVenue
 
 dbname = "bandevents.db"
 
 
 def init_db() -> None:
-    sql_schema = ""
+    sql_schema = """
+CREATE TABLE IF NOT EXISTS artist (
+	id INTEGER PRIMARY KEY,
+	name TEXT NOT NULL UNIQUE,
+	playcount INTEGER
+);
 
-    with open("schema.sql", mode="r", encoding="utf-8") as f:
-        sql_schema = f.readlines()
+CREATE TABLE IF NOT EXISTS venue (
+	id INTEGER PRIMARY KEY,
+	name TEXT NOT NULL,
+	city TEXT NOT NULL,
+	country TEXT NOT NULL,
+	UNIQUE (name, city, country)
+);
+
+CREATE TABLE IF NOT EXISTS event (
+	id INTEGER PRIMARY KEY,
+	name TEXT NOT NULL,
+	venueid INTEGER NOT NULL,
+	date TEXT NOT NULL,
+	price TEXT,
+	FOREIGN KEY (venueid) REFERENCES venue(id),
+	UNIQUE (name, date, venueid)
+);
+"""
 
     with sqlite3.connect(dbname) as conn:
         cur = conn.cursor()
-        for stmt in sql_schema:
-            cur.execute(stmt)
+        cur.executescript(sql_schema)
         conn.commit()
         cur.close()
 
