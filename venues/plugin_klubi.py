@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import http
 import re
 from typing import Any, Dict, Generator
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -52,12 +53,10 @@ class Klubi(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
+    klubi = Klubi()
+    r = fetcher.retry_request(http.HTTPMethod.GET, klubi.url)
 
-    k = Klubi()
-    r = requests.get(k.url)
-
-    for e in k.parse_events(r.content):
-        for k, v in e.items():
-            print(f"{k:>10s}: {v}")
+    for e in klubi.parse_events(r.content):
+        for klubi, v in e.items():
+            print(f"{klubi:>10s}: {v}")
         print()

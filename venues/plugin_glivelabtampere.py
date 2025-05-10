@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import http
 import re
 import time
 from typing import Any, Dict, Generator, List
@@ -7,6 +7,7 @@ from typing import Any, Dict, Generator, List
 import lxml.html
 import requests
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -61,7 +62,7 @@ class Glivelabtampere(AbstractVenue):
 
 if __name__ == '__main__':
     g = Glivelabtampere()
-    r = requests.get(g.url)
+    r = fetcher.retry_request(http.HTTPMethod.GET, g.url)
 
     for e in g.parse_events(r.content):
         for k, v in e.items():

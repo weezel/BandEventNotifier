@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import http
 from typing import List
 
 import lxml.html
@@ -7,6 +8,7 @@ import lxml.html
 import re
 import time
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -58,10 +60,12 @@ class Lepakkomies(AbstractVenue):
                                    '"price")]/text()'))
         price = self.parse_price(price.split(" "))
 
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": artist,
-                "price": price}
+        return {
+            "venue": self.get_venue_name(),
+            "date": date,
+            "name": artist,
+            "price": price,
+        }
 
     def parse_events(self, data: bytes):
         doc = lxml.html.fromstring(data)
@@ -72,12 +76,10 @@ class Lepakkomies(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
+    lepakkomies = Lepakkomies()
+    r = fetcher.retry_request(http.HTTPMethod.GET, lepakkomies.url)
 
-    k = Lepakkomies()
-    r = requests.get(k.url)
-
-    for e in k.parse_events(r.content):
-        for k, v in e.items():
-            print(f"{k:>10s}: {v}")
+    for e in lepakkomies.parse_events(r.content):
+        for lepakkomies, v in e.items():
+            print(f"{lepakkomies:>10s}: {v}")
         print()

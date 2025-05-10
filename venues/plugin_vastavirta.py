@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import http
 import re
 from datetime import datetime
 from typing import Any, Dict, Generator
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -67,10 +69,8 @@ class Vastavirta(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
-
     v = Vastavirta()
-    r = requests.get(v.url)
+    r = fetcher.retry_request(http.HTTPMethod.GET, v.url)
 
     for event in v.parse_events(r.content):
         for k, v in event.items():

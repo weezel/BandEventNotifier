@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import http
 import re
 import time
 from datetime import datetime
@@ -8,6 +8,7 @@ from typing import Any, Dict, Generator
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -55,10 +56,8 @@ class Lutakko(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
-
     lutakko = Lutakko()
-    r = requests.get(lutakko.url)
+    r = fetcher.retry_request(http.HTTPMethod.GET, lutakko.url)
 
     for e in lutakko.parse_events(r.content):
         for k, v in e.items():

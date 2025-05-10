@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import http
 import re
 from typing import Any, Dict, Generator
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -46,22 +47,22 @@ class Mustakynnys(AbstractVenue):
 
                 name = re.sub("\s+", " ", name).replace("\n", "")
 
-                yield {"venue": self.get_venue_name(),
+                yield {
+                    "venue": self.get_venue_name(),
                        "date": date,
                        "name": name,
-                       "price": price}
+                       "price": price,
+                }
                 name = ""
             elif event.get("class") == "keikka":
                 name += " ".join(event.xpath('./a/text()'))
 
 
 if __name__ == '__main__':
-    import requests
+    mustakynnys = Mustakynnys()
+    r = fetcher.retry_request(http.HTTPMethod.GET, mustakynnys.url)
 
-    l = Mustakynnys()
-    r = requests.get(l.url)
-
-    for e in l.parse_events(r.content):
+    for e in mustakynnys.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
         print()

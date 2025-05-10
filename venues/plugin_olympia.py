@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import http
 import re
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -50,10 +51,8 @@ class Olympia(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
-
     olympia = Olympia()
-    r = requests.get(olympia.url)
+    r = fetcher.retry_request(http.HTTPMethod.GET, olympia.url)
 
     for e in olympia.parse_events(r.content):
         for k, v in e.items():

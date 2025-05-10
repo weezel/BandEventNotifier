@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import http
 import re
 from typing import Any, Dict, Generator
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -62,10 +63,8 @@ class Kulttuuritalo(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
-
     kulttuuritalo = Kulttuuritalo()
-    r = requests.get(kulttuuritalo.url)
+    r = fetcher.retry_request(http.HTTPMethod.GET, kulttuuritalo.url)
 
     for e in kulttuuritalo.parse_events(r.content):
         for k, v in e.items():

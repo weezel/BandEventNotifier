@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import http
 import re
 import time
 from typing import Any, Dict, Generator, List
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -54,10 +56,8 @@ class Kuudeslinja(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
-
     k = Kuudeslinja()
-    r = requests.get(k.url)
+    r = fetcher.retry_request(http.HTTPMethod.GET, k.url)
 
     for e in k.parse_events(r.content):
         for k, v in e.items():

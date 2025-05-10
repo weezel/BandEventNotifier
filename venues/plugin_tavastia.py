@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-
+import http
 import re
 import time
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -63,12 +64,10 @@ class Tavastia(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
+    tavastia = Tavastia()
+    r = fetcher.retry_request(http.HTTPMethod.GET, tavastia.url)
 
-    d = Tavastia()
-    r = requests.get(d.url)
-
-    for i in d.parse_events(r.content):
+    for i in tavastia.parse_events(r.content):
         for k, v in i.items():
             print(f"{k:>10s}: {v}")
         print()

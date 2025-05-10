@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import http
 import re
 from typing import Any, Dict, Generator
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -53,17 +54,17 @@ class Korjaamo(AbstractVenue):
             event_info = self.parse_event(event)
             price = self.parse_price(event)
 
-            yield {"venue": self.get_venue_name(),
-                   "date": date,
-                   "name": event_info,
-                   "price": price}
+            yield {
+                "venue": self.get_venue_name(),
+                "date": date,
+                "name": event_info,
+                "price": price,
+            }
 
 
 if __name__ == '__main__':
-    import requests
-
     korjaamo = Korjaamo()
-    r = requests.get(korjaamo.url)
+    r = fetcher.retry_request(http.HTTPMethod.GET, korjaamo.url)
 
     for e in korjaamo.parse_events(r.content):
         for k, v in e.items():

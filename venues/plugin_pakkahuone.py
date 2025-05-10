@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import http
 import re
 from typing import Any, Dict, Generator
 
 import lxml.html
 
+import fetcher
 from venues.abstract_venue import AbstractVenue
 
 
@@ -52,12 +53,10 @@ class Pakkahuone(AbstractVenue):
 
 
 if __name__ == '__main__':
-    import requests
+    pakkahuone = Pakkahuone()
+    r = fetcher.retry_request(http.HTTPMethod.GET, pakkahuone.url)
 
-    p = Pakkahuone()
-    r = requests.get(p.url)
-
-    for e in p.parse_events(r.content):
+    for e in pakkahuone.parse_events(r.content):
         for k, v in e.items():
             print(f"{k:>10s}: {v}")
         print()
