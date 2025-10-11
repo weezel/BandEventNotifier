@@ -88,7 +88,7 @@ def main() -> None:
         show_gigs(dbeng)
     elif args.purge:
         print("Purging past events...")
-        dbeng.purgeOldEvents()
+        dbeng.purge_old_events()
     elif args.lastfm:
         fetch_lastfm(dbeng)
     elif args.venues:

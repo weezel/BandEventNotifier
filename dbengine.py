@@ -110,7 +110,7 @@ class DBEngine(object):
                 self.conn.commit()
                 cur.close()
 
-    def insertLastFMartists(self, artist: str, playcount: int) -> None:
+    def insert_lastfm_artists(self, artist: str, playcount: int) -> None:
         q = "INSERT OR REPLACE INTO artist (name, playcount) VALUES (?, ?);"
         with self.lock:
             cur = None
@@ -123,7 +123,7 @@ class DBEngine(object):
             finally:
                 cur.close()
 
-    def getVenues(self) -> Dict[str, str]:
+    def get_venues(self) -> Dict[str, str]:
         q = "SELECT id, name, city, country FROM venue"
         cur = None
         results = dict()
@@ -184,7 +184,7 @@ class DBEngine(object):
 
         return gigs
 
-    def getArtists(self) -> Generator[Dict[str, str], None, None]:
+    def get_artists(self) -> Generator[Dict[str, str], None, None]:
         q = "SELECT name, playcount FROM artist;"
         cur = None
         try:
@@ -198,7 +198,7 @@ class DBEngine(object):
         finally:
             cur.close()
 
-    def getArtist(self, name: str) -> Generator[Dict[str, str], None, None]:
+    def get_artist(self, name: str) -> Generator[Dict[str, str], None, None]:
         q = "SELECT name, playcount FROM artist " \
             + "WHERE name = ? LIMIT 5;"
         cur = None
@@ -213,7 +213,7 @@ class DBEngine(object):
         finally:
             cur.close()
 
-    def purgeOldEvents(self) -> None:
+    def purge_old_events(self) -> None:
         q = "DELETE FROM event " \
             + "WHERE strftime('%Y-%m-%d', date) < date('now');"
         with self.lock:
