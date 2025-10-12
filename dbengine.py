@@ -93,11 +93,13 @@ class DBEngine(object):
                 cur = self.conn.cursor()
 
                 for event in events:
-                    venue_id = self.get_venue_by_name(
+                    venue_data = self.get_venue_by_name(
                         event["venue"],
                         venue.get_city(),
-                        venue.get_country())[0]
-                    event["venueid"] = venue_id
+                        venue.get_country())
+                    if venue_data is None:
+                        raise f"Couldn't insert events into venue '{venue.name}'"
+                    event["venueid"] = venue_data[0]
                     event.pop("venue")  # venue -> venueid to match sql implementation
                     cols = ", ".join(event.keys())
                     placeholders = ":" + ", :".join(event.keys())
