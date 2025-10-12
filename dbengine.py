@@ -79,7 +79,7 @@ class DBEngine(object):
                 cur.execute(q, venue)
                 self.conn.commit()
             except Exception as e:
-                print(f"Failed with error message: {e}")
+                print(f"Couldn't create venue entity: {e}")
             finally:
                 cur.close()
 
@@ -105,7 +105,7 @@ class DBEngine(object):
 
                     cur.execute(q, event)
             except Exception as e:
-                print(f"Failed with error message: {e}")
+                print(f"Couldn't insert events for venue '{venue.name}': {e}")
             finally:
                 self.conn.commit()
                 cur.close()
@@ -119,7 +119,7 @@ class DBEngine(object):
                 cur.execute(q, [artist, playcount])
                 self.conn.commit()
             except Exception as e:
-                print(f"Failed with error message: {e}")
+                print(f"Couldn't insert artist '{artist}' to LastFM table: {e}")
             finally:
                 cur.close()
 
@@ -132,7 +132,7 @@ class DBEngine(object):
             res = cur.conn.execute(q)
             results = res.fetchall()
         except Exception as e:
-            print(f"Failed with error message: {e}")
+            print(f"Couldn't get venue data: {e}")
         finally:
             cur.close()
 
@@ -148,9 +148,12 @@ class DBEngine(object):
             results = cur.execute(q, [vname, city, country])
             venue_name = results.fetchone()
         except Exception as e:
-            print(f"Failed with error message: {e}")
+            print(f"Couldn't get venue '{vname}:{city}:{country}' by name: {e}")
         finally:
             cur.close()
+
+        if len(venue_name) != 4:
+            raise Exception(f"Wrong number of arguments: {venue_name}")
 
         return venue_name
 
@@ -178,7 +181,7 @@ class DBEngine(object):
             results = cur.execute(q)
             gigs = results.fetchall()
         except Exception as e:
-            print(f"Failed with error message: {e}")
+            print(f"Couldn't get relevant gigs: {e}")
         finally:
             cur.close()
 
@@ -194,7 +197,7 @@ class DBEngine(object):
                 yield {"artist": artist,
                        "playcount": playcount}
         except Exception as e:
-            print(f"Failed with error message: {e}")
+            print(f"Couldn't get artists: {e}")
         finally:
             cur.close()
 
@@ -209,7 +212,7 @@ class DBEngine(object):
                 yield {"artist": artist,
                        "playcount": playcount}
         except Exception as e:
-            print(f"Failed with error message: {e}")
+            print(f"Couldn't get artist '{name}': {e}")
         finally:
             cur.close()
 
@@ -223,6 +226,6 @@ class DBEngine(object):
                 cur.execute(q)
                 self.conn.commit()
             except Exception as e:
-                print(f"Failed with error message: {e}")
+                print(f"Couldn't purge old events: {e}")
             finally:
                 cur.close()
