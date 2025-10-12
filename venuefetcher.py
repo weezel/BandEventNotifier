@@ -13,12 +13,12 @@ class VenueFetcher:
         self.venues = load_venue_plugins()
         self._prepare_db()
 
-    def _prepare_db(self):
+    def _prepare_db(self) -> None:
         # Create database entries for the found venues
         for v in self.venues:
             self.dbeng.plugin_create_venue_entity(v.event_sqlentity())
 
-    def fetch_venues(self):
+    def fetch_venues(self) -> None:
         with ThreadPoolExecutor(max_workers=20) as executor:
             results = executor.map(self._fetch, self.venues, chunksize=10)
 
