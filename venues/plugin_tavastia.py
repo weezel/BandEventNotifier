@@ -50,7 +50,8 @@ class Tavastia(AbstractVenue):
         price = self.parse_price(tag)
 
         return {
-            "venue": self.get_venue_name(),
+            "venue": self.name,
+            "city": self.city,
             "date": date,
             "name": event,
             "price": price,

@@ -41,7 +41,8 @@ class Kuudeslinja(AbstractVenue):
         event = f"{title}: {info}".replace("\n", "")
 
         return {
-            "venue": self.get_venue_name(),
+            "venue": self.name,
+            "city": self.city,
             "date": date,
             "name": event,
             "price": price

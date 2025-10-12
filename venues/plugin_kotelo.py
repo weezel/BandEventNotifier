@@ -65,7 +65,8 @@ class Kotelo(AbstractVenue):
             price = self.parse_price(event)
 
             yield {
-                "venue": f"{self.get_venue_name()}",
+                "venue": self.name,
+                "city": self.city,
                 "date": date,
                 "name": event_info,
                 "price": price,

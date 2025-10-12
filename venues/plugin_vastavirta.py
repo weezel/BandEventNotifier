@@ -49,7 +49,8 @@ class Vastavirta(AbstractVenue):
         prices = self.parse_price(event)
 
         return {
-            "venue": self.get_venue_name(),
+            "venue": self.name,
+            "city": self.city,
             "date": date,
             "name": etitle,
             "price": prices,

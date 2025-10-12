@@ -48,7 +48,8 @@ class Lutakko(AbstractVenue):
             price = self.parse_price(event)
 
             yield {
-                "venue": self.get_venue_name(),
+                "venue": self.name,
+                "city": self.city,
                 "date": date,
                 "name": title,
                 "price": price

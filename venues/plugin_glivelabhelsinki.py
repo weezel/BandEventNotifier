@@ -44,10 +44,13 @@ class Glivelabhelsinki(AbstractVenue):
         event_description = self.normalize_string(event_description)
         price = "0€"
 
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": event_description,
-                "price": price}
+        return {
+            "venue": self.name,
+            "city": self.city,
+            "date": date,
+            "name": event_description,
+            "price": price,
+        }
 
     def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)

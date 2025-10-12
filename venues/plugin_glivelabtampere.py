@@ -5,7 +5,6 @@ import time
 from typing import Any, Dict, Generator, List
 
 import lxml.html
-import requests
 
 import fetcher
 from venues.abstract_venue import AbstractVenue
@@ -33,9 +32,9 @@ class Glivelabtampere(AbstractVenue):
 
     def normalize_string(self, s: str):
         rm_newlines = s.replace("\n", " ")
-        rm_spaces = re.sub("\s+", " ", rm_newlines)
-        rm_left_padding = re.sub("^\s+", "", rm_spaces)
-        rm_right_padding = re.sub("\s+$", "", rm_left_padding)
+        rm_spaces = re.sub("\\s+", " ", rm_newlines)
+        rm_left_padding = re.sub("^\\s+", "", rm_spaces)
+        rm_right_padding = re.sub("\\s+$", "", rm_left_padding)
         return rm_right_padding
 
     def parse_event(self, tag: lxml.html.HtmlElement) \
@@ -45,10 +44,13 @@ class Glivelabtampere(AbstractVenue):
         event_description = self.normalize_string(event_description)
         price = "0€"
 
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": event_description,
-                "price": price}
+        return {
+            "venue": self.name,
+            "city": self.city,
+            "date": date,
+            "name": event_description,
+            "price": price,
+        }
 
     def parse_events(self, data: bytes) \
             -> Generator[Dict[str, Any], None, None]:

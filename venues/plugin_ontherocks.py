@@ -59,10 +59,13 @@ class Ontherocks(AbstractVenue):
             + '/span/text()'))
         price = self.parse_price(parsed_price)
 
-        return {"venue": self.get_venue_name(),
-                "date": date,
-                "name": artist,
-                "price": f"{price}"}
+        return {
+            "venue": self.name,
+            "city": self.city,
+            "date": date,
+            "name": artist,
+            "price": price,
+        }
 
     def parse_events(self, data: bytes) \
             -> Generator[Dict[str, Any], None, None]:

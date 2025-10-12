@@ -18,7 +18,7 @@ class Olympia(AbstractVenue):
         self.country = "Finland"
 
         # Parsing patterns
-        self.datepat = re.compile("[0-9.]{1,2}\.[0-9]{1,2}\.[0-9]{4}")
+        self.datepat = re.compile("[0-9.]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}")
 
     def parse_date(self, tag: lxml.html.HtmlElement) -> str:
         pvm_tag = tag.xpath('./div[contains(@class, "pvm")]')[0].text_content()
@@ -33,7 +33,7 @@ class Olympia(AbstractVenue):
 
     def parse_event(self, tag: lxml.html.HtmlElement) -> str:
         info_tag = tag.xpath('./div[contains(@class, "infot")]')[0].text_content()
-        info_tag = re.sub("\s+", " ", info_tag).lstrip(" ").rstrip(" ")
+        info_tag = re.sub("\\s+", " ", info_tag).lstrip(" ").rstrip(" ")
         return info_tag
 
     def parse_events(self, data: bytes):
@@ -44,10 +44,13 @@ class Olympia(AbstractVenue):
             event_info = self.parse_event(event)
             price = self.parse_price(event_info)
 
-            yield {"venue": self.get_venue_name(),
-                   "date": date,
-                   "name": event_info,
-                   "price": price}
+            yield {
+                "venue": self.name,
+                "city": self.city,
+                "date": date,
+                "name": event_info,
+                "price": price,
+            }
 
 
 if __name__ == '__main__':

@@ -45,7 +45,8 @@ class Pakkahuone(AbstractVenue):
             title = self.parse_artists(event)
             prices = self.get_price(event)
             yield {
-                "venue": self.get_venue_name(),
+                "venue": self.name,
+                "city": self.city,
                 "date": "{:04d}-{:02d}-{:02d}".format(int(year), int(month), int(day)),
                 "name": title,
                 "price": prices,

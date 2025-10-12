@@ -61,7 +61,8 @@ class Lepakkomies(AbstractVenue):
         price = self.parse_price(price.split(" "))
 
         return {
-            "venue": self.get_venue_name(),
+            "venue": self.name,
+            "city": self.city,
             "date": date,
             "name": artist,
             "price": price,

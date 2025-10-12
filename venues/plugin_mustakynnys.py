@@ -20,7 +20,7 @@ class Mustakynnys(AbstractVenue):
 
         # Parsing patterns
         self.datepat = re.compile("[0-9.]+")
-        self.monetary = re.compile("[0-9]+(\s+)?€")
+        self.monetary = re.compile(r"[0-9]+(\s+)?€")
 
     def parse_date(self, t: lxml.html.HtmlElement) -> str:
         tag = t.xpath('./text()')
@@ -45,13 +45,14 @@ class Mustakynnys(AbstractVenue):
                 date = self.parse_date(event)
                 price = self.parse_price(event)
 
-                name = re.sub("\s+", " ", name).replace("\n", "")
+                name = re.sub(r"\s+", " ", name).replace("\n", "")
 
                 yield {
-                    "venue": self.get_venue_name(),
-                       "date": date,
-                       "name": name,
-                       "price": price,
+                    "venue": self.name,
+                    "city": self.city,
+                    "date": date,
+                    "name": name,
+                    "price": price,
                 }
                 name = ""
             elif event.get("class") == "keikka":

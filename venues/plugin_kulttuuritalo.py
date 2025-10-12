@@ -55,7 +55,8 @@ class Kulttuuritalo(AbstractVenue):
             price = self.parse_price(event)
 
             yield {
-                "venue": self.get_venue_name(),
+                "venue": self.name,
+                "city": self.city,
                 "date": date,
                 "name": event_info,
                 "price": price,
