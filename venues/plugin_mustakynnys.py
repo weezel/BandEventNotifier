@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import datetime
 import http
 import re
 from typing import Any, Dict, Generator
@@ -18,44 +19,34 @@ class Mustakynnys(AbstractVenue):
         self.city = "Jyväskylä"
         self.country = "Finland"
 
-        # Parsing patterns
-        self.datepat = re.compile("[0-9.]+")
-        self.monetary = re.compile(r"[0-9]+(\s+)?€")
-
-    def parse_date(self, t: lxml.html.HtmlElement) -> str:
-        tag = t.xpath('./text()')
-
-        founddate = re.search(self.datepat, " ".join(tag))
-
-        if founddate is None:
+    def parse_date(self, tag: lxml.html.HtmlElement) -> str:
+        pvm = " ".join(tag.xpath('.//div[@id="pvm"]/text()')).split(" ")
+        if len(pvm) < 2:
             return ""
+        day, month = pvm[1].rstrip(".").split(".")
+        year = datetime.datetime.now().year
+        return f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
 
-        day, month, year = founddate.group().split(".")
-        return f"{year:04d}-{month:02d}-{day:02d}"
+    def parse_event(self, tag: lxml.html.HtmlElement) -> str:
+        doc = " ".join(tag.xpath('.//div[@id="keikannimi"]/strong/text()'))
+        doc = re.sub(r"\s+", " ", doc).replace("\n", "")
+        return doc
 
-    def parse_events(self, data: bytes) \
-            -> Generator[Dict[str, Any], None, None]:
+    def parse_events(self, data: bytes) -> Generator[Dict[str, Any], None, None]:
         doc = lxml.html.fromstring(data)
-        name = ""
 
-        for event in reversed(doc.xpath('//div[@id="boxleft"]/p[@class="pvm" '
-                                        'or @class="keikka"]')):
-            # Price is also included under the pvm tag
-            if event.get("class") == "pvm":
-                date = self.parse_date(event)
-                price = self.parse_price(event)
+        for event in doc.xpath('//div[@id="keikka"]'):
+            date = self.parse_date(event)
+            tmp = " ".join(event.xpath('.//div[@id="keikannimi"]/a/text()'))
+            price = self.parse_price(tmp)
+            name = self.parse_event(event)
 
-                name = re.sub(r"\s+", " ", name).replace("\n", "")
-
-                yield {
-                    "venue": self.name,
-                    "date": date,
-                    "name": name,
-                    "price": price,
-                }
-                name = ""
-            elif event.get("class") == "keikka":
-                name += " ".join(event.xpath('./a/text()'))
+            yield {
+                "venue": self.name,
+                "date": date,
+                "name": name,
+                "price": price,
+            }
 
 
 if __name__ == '__main__':
