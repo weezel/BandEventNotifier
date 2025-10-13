@@ -55,9 +55,10 @@ def show_gigs(dbeng: dbengine.DBEngine) -> None:
             gigdate = utils.colorize(event["date"], "red")
         else:
             gigdate = utils.colorize(event["date"], "bold")
-        print("[{}] {}\n{}".format(
+        print("[{}] {}, {}\n{}".format(
             gigdate,
             utils.colorize(event["venue_name"], "cyan"),
+            utils.colorize(event["city"], "cyan"),
             event["event_name"]),
         )
         print()
