@@ -49,7 +49,6 @@ class Mustakynnys(AbstractVenue):
 
                 yield {
                     "venue": self.name,
-                    "city": self.city,
                     "date": date,
                     "name": name,
                     "price": price,

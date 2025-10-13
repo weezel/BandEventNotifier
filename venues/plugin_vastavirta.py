@@ -50,7 +50,6 @@ class Vastavirta(AbstractVenue):
 
         return {
             "venue": self.name,
-            "city": self.city,
             "date": date,
             "name": etitle,
             "price": prices,

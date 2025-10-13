@@ -101,11 +101,9 @@ class DBEngine(object):
                         raise f"Couldn't insert events into venue '{venue.name}'"
                     event["venueid"] = venue_data[0]
                     event.pop("venue")  # venue -> venueid to match sql implementation
-                    event.pop("city")  # venue -> venueid to match sql implementation
                     cols = ", ".join(event.keys())
                     placeholders = ":" + ", :".join(event.keys())
                     q = f"INSERT OR IGNORE INTO event ({cols}) VALUES ({placeholders});"
-
                     cur.execute(q, event)
             except Exception as e:
                 print(f"Couldn't insert events for venue '{venue.name}': {e}")

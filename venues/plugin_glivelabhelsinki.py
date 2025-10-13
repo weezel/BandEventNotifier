@@ -46,7 +46,6 @@ class Glivelabhelsinki(AbstractVenue):
 
         return {
             "venue": self.name,
-            "city": self.city,
             "date": date,
             "name": event_description,
             "price": price,

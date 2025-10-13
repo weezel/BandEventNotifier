@@ -61,7 +61,6 @@ class Ontherocks(AbstractVenue):
 
         return {
             "venue": self.name,
-            "city": self.city,
             "date": date,
             "name": artist,
             "price": price,

@@ -49,7 +49,6 @@ class Lutakko(AbstractVenue):
 
             yield {
                 "venue": self.name,
-                "city": self.city,
                 "date": date,
                 "name": title,
                 "price": price

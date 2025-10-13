@@ -56,7 +56,6 @@ class Korjaamo(AbstractVenue):
 
             yield {
                 "venue": self.name,
-                "city": self.city,
                 "date": date,
                 "name": event_info,
                 "price": price,
