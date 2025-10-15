@@ -15,7 +15,7 @@ from venues.abstract_venue import AbstractVenue
 class Lutakko(AbstractVenue):
     def __init__(self):
         super().__init__()
-        self.url = "http://www.jelmu.net/"
+        self.url = "http://www.jelmu.net/?filter=lutakko"
         self.name = "Lutakko"
         self.city = "Jyväskylä"
         self.country = "Finland"
@@ -28,9 +28,14 @@ class Lutakko(AbstractVenue):
         return prices
 
     def parse_date(self, tag: lxml.html.HtmlElement) -> str:
-        date = " ".join(tag.xpath('.//span[@class="date"]/text()'))
+        date = " ".join(tag.xpath('.//span[@class="date"][1]/text()'))
 
-        day, month = date.rstrip(".").split(".")
+        if g := self.datepat.search(date):
+            parsed_date = g.group()
+            day, month = parsed_date.rstrip(".").split(".")
+        else:
+            print(f"Couldn't parse date for: {date}")
+            return ""
 
         year = datetime.now().year
         # Are we on the new year already?
@@ -44,7 +49,8 @@ class Lutakko(AbstractVenue):
 
         for event in doc.xpath('//a[contains(@class, "woocommerce-LoopProduct-link")]'):
             date = self.parse_date(event)
-            title = event.xpath('string(.//h2[contains(@class, "woocommerce-loop-product__title")])').strip()
+            title = event.xpath('string(.//h2[contains(@class, "woocommerce-loop-product__title")])')
+            title = re.sub("\\s+", " ", title).lstrip().rstrip()
             price = self.parse_price(event)
 
             yield {
